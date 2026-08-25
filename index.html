@@ -309,6 +309,7 @@ const CONFIG={
     '后之视今，亦犹今之视昔，悲夫！故列叙时人，录其所述，虽世殊事异，所以兴怀，其致一也。后之览者，亦将有感于斯文。'
   ],
   sutraDays:10,
+  sutraStart:'2026-08-25',
   sutraBlanks:[
     {seg:0,text:'永和九年，岁在癸丑，____，会于会稽山阴之兰亭，____。群贤毕至，____。',blanks:['暮春之初','修禊事也','少长咸集'],hints:{0:'暮',1:'修',2:'少'}},
     {seg:1,text:'此地有____，茂林修竹，又有____，引以为流觞曲水，____。',blanks:['崇山峻岭','清流激湍','列坐其次'],hints:{0:'崇',1:'清',2:'列'}},
@@ -514,7 +515,11 @@ function renderJournal(){
 }
 /* ================== 默写 ================== */
 function dayNum(s){return Math.floor((parseDate(s)-new Date(2000,0,1))/86400000);}
-function sutraDayIndex(s){return dayNum(s||sutraCursor||todayKey)%CONFIG.sutraDays;}
+function sutraDayIndex(s){
+  const cur=s||sutraCursor||todayStr();
+  const base=dayNum(cur)-dayNum(CONFIG.sutraStart);
+  return ((base%CONFIG.sutraDays)+CONFIG.sutraDays)%CONFIG.sutraDays;
+}
 function sutraDateLabel(){
   const cur=sutraCursor||todayKey;
   const today=todayStr();
