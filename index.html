@@ -162,10 +162,6 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <div id="todayStr"></div>
       </div>
       <div class="topbar-right">
-        <div class="sync-box" id="syncBox" title="数据存储在本地浏览器">
-          <span class="sync-dot" id="syncDot"></span><span id="syncTxt">本地存储</span>
-        </div>
-        <div class="streak-badge" title="连续打卡天数"><b id="streakNum">0</b><span>天连击</span></div>
         <button class="calm-btn" id="mindBtn" title="静心">
           <span class="calm-bubble">🫧</span>
           <span class="calm-count" id="mindCounts">今日 0 · 累计 0</span>
@@ -180,13 +176,6 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <div class="progress-txt" id="habitProg">0/0</div>
       </div>
       <ul class="habit-list" id="habitList"></ul>
-      <div class="toolbar">
-        <button class="mini-btn" id="addHabitBtn">＋ 添加习惯</button>
-        <button class="mini-btn" id="exportBtn">导出备份</button>
-        <button class="mini-btn" id="importBtn">导入备份</button>
-        <button class="mini-btn" id="rawBtn">查看原始数据</button>
-      </div>
-      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
 
     <div class="card">
@@ -201,6 +190,11 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
 
     <div class="card">
       <h2>每日默写 <span class="sub" id="sutraSub">《兰亭集序》· 按天推进</span></h2>
+      <div class="journal-nav" style="margin-top:12px">
+        <button class="icon-btn" id="sutraPrev" title="前一天">‹</button>
+        <div class="day-label" id="sutraDayLabel"></div>
+        <button class="icon-btn" id="sutraNext" title="后一天">›</button>
+      </div>
       <div class="sutra-progress">
         <div class="sutra-stage"><span id="sutraDone">0/0</span><span id="sutraPct">0%</span></div>
         <div class="progress-bar"><div class="progress-fill" id="sutraBar"></div></div>
@@ -230,8 +224,21 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
   <div class="column">
     <div class="card">
       <h2>本周汇总 <span class="sub" id="weekRange"></span></h2>
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="sync-box" id="syncBox" title="数据存储在本地浏览器">
+          <span class="sync-dot" id="syncDot"></span><span id="syncTxt">本地存储</span>
+        </div>
+        <div class="streak-badge" title="连续打卡天数"><b id="streakNum">0</b><span>天连击</span></div>
+      </div>
       <div style="height:180px;position:relative"><canvas id="weekChart"></canvas></div>
       <div id="weekStats" style="font-size:12px;color:var(--text2);margin-top:10px"></div>
+      <div class="toolbar" style="margin-top:14px">
+        <button class="mini-btn" id="addHabitBtn">＋ 添加习惯</button>
+        <button class="mini-btn" id="exportBtn">导出备份</button>
+        <button class="mini-btn" id="importBtn">导入备份</button>
+        <button class="mini-btn" id="rawBtn">查看原始数据</button>
+      </div>
+      <input type="file" id="importFile" accept=".json,application/json" style="display:none">
     </div>
   </div>
 </div>
@@ -320,7 +327,7 @@ const CONFIG={
 };
 /* ================== 数据层 ================== */
 const LS_MAIN='workbench_data_v1', LS_BAK='workbench_data_v1_bak';
-let state=null, todayKey='', editingHabit=null, journalCursor=null;
+let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null;
 let syncState='idle', syncTimer=null, cloudTimer=null;
 let journalDebounce={}, chartInst=null;
 const pad2=n=>String(n).padStart(2,'0');
@@ -507,10 +514,23 @@ function renderJournal(){
 }
 /* ================== 默写 ================== */
 function dayNum(s){return Math.floor((parseDate(s)-new Date(2000,0,1))/86400000);}
-function sutraDayIndex(){return dayNum(todayKey)%CONFIG.sutraDays;}
+function sutraDayIndex(s){return dayNum(s||sutraCursor||todayKey)%CONFIG.sutraDays;}
+function sutraDateLabel(){
+  const cur=sutraCursor||todayKey;
+  const today=todayStr();
+  const isToday=cur===today;
+  const m=parseDate(cur).getMonth()+1, d=parseDate(cur).getDate(), w=weekdayCN[parseDate(cur).getDay()];
+  return isToday?('今天 '+m+'/'+d+' 周'+w):(m+'/'+d+' 周'+w);
+}
 function renderSutra(){
+  const cur=sutraCursor||todayKey;
+  const today=todayStr();
+  const isToday=cur===today;
   const total=CONFIG.sutraDays;
-  const idx=sutraDayIndex();
+  const idx=sutraDayIndex(cur);
+  document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
+  document.getElementById('sutraPrev').disabled=false;
+  document.getElementById('sutraNext').style.visibility=isToday?'hidden':'visible';
   document.getElementById('sutraDone').textContent=(idx+1)+'/'+total;
   document.getElementById('sutraPct').textContent=Math.round((idx+1)/total*100)+'%';
   document.getElementById('sutraBar').style.width=((idx+1)/total*100)+'%';
@@ -532,11 +552,14 @@ function renderSutra(){
   }
   const html=filled.replace(/@@(\d+)@@/g,(m,id)=>{
     const b=inputs[+id];
-    return '<sup>'+(+id+1)+'</sup><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'"><sup>'+b.n+'字</sup>';
+    return '<sup>'+(+id+1)+'</sup><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'"'+(isToday?'':' disabled')+'><sup>'+b.n+'字</sup>';
   });
   blk.innerHTML=html;
+  /* 历史日期：禁用提交/重置，仅可看答案 */
+  document.getElementById('sutraSubmit').disabled=!isToday;
+  document.getElementById('sutraReset').disabled=!isToday;
   /* 还原记录 */
-  const rec=state.sutraLog[todayKey];
+  const rec=state.sutraLog[cur];
   blk.querySelectorAll('.blank').forEach(inp=>{
     const id=+inp.dataset.id;
     if(rec&&rec.values&&rec.values[id]!=null){
@@ -546,8 +569,9 @@ function renderSutra(){
   });
 }
 function submitSutra(){
+  const cur=sutraCursor||todayKey;
   const blk=document.getElementById('sutraBlock');
-  const idx=sutraDayIndex();
+  const idx=sutraDayIndex(cur);
   const segTpl=CONFIG.sutraBlanks.find(b=>b.seg===idx);
   const inpArr=[].slice.call(blk.querySelectorAll('.blank'));
   let correct=0;
@@ -562,8 +586,8 @@ function submitSutra(){
     values[di]=v;okay[di]=good;
   });
   const all=inpArr.length;
-  if(!state.sutraLog[todayKey])state.sutraLog[todayKey]={};
-  const rec=state.sutraLog[todayKey];
+  if(!state.sutraLog[cur])state.sutraLog[cur]={};
+  const rec=state.sutraLog[cur];
   rec.tries=(rec.tries||0)+1;
   rec.done=true;rec.values=values;rec.okay=okay;rec.allT=correct===all;
   const res=document.getElementById('sutraResult');
@@ -575,16 +599,17 @@ function submitSutra(){
 function toggleAnswer(){
   const box=document.getElementById('sutraAnswerBox');
   const btn=document.getElementById('sutraAnswerToggle');
-  const idx=sutraDayIndex();
-  const segBlanks=CONFIG.sutraBlanks.filter(b=>b.seg===idx);
+  const cur=sutraCursor||todayKey;
+  const idx=sutraDayIndex(cur);
   const seg=CONFIG.sutraSegments[idx];
   if(box.classList.contains('open')){box.classList.remove('open');btn.textContent='看答案';return;}
   document.getElementById('sutraAnswerBody').textContent=seg;
   box.classList.add('open');btn.textContent='收起答案';
 }
 function resetSutra(){
-  if(!confirm('确定重置今天的默写记录吗？'))return;
-  delete state.sutraLog[todayKey];
+  const cur=sutraCursor||todayKey;
+  if(!confirm('确定重置 '+cur+' 的默写记录吗？'))return;
+  delete state.sutraLog[cur];
   saveData(true);renderSutra();renderSutraHistory();toast('已重置');
 }
 function renderSutraHistory(){
@@ -696,12 +721,14 @@ function bindEvents(){
   document.getElementById('sutraAnswerToggle').onclick=toggleAnswer;
   document.getElementById('ansClose').onclick=toggleAnswer;
   document.getElementById('sutraReset').onclick=resetSutra;
+  document.getElementById('sutraPrev').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,-1);renderSutra();renderSutraHistory();};
+  document.getElementById('sutraNext').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,1);if(sutraCursor>todayKey)sutraCursor=todayKey;renderSutra();renderSutraHistory();};
   document.getElementById('mindBtn').onclick=openMind;
   document.getElementById('mind-mask').addEventListener('click',closeMind);
   document.getElementById('rawClose').onclick=()=>document.getElementById('rawModal').classList.remove('on');
   document.getElementById('rawCopy').onclick=copyRaw;
   document.getElementById('syncBox').onclick=null;
-  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;renderAll();}},30000);
+  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;renderAll();}},30000);
 }
 function renderAll(){
   renderHabits();renderJournal();renderSutra();renderSutraHistory();renderWeek();
