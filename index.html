@@ -96,13 +96,18 @@ input,textarea{font-family:var(--font);color:var(--text)}
 .sutra-stage{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
 .sutra-panel{background:var(--card-inner);border:1px solid var(--border);border-radius:12px;padding:18px 14px;margin-top:12px;position:relative}
 .sutra-title{text-align:center;font-size:13px;color:var(--text3);margin-bottom:12px;letter-spacing:2px}
-.sutra-block{text-align:center;line-height:2.8;letter-spacing:2px;font-size:17px;color:var(--text);min-height:110px;user-select:text}
-.sutra-block .blank{display:inline-block;border-bottom:1.5px dashed var(--primary);min-width:54px;text-align:center;font-size:16px;padding:0 5px;margin:0 2px;line-height:1.9;background:transparent;outline:none;color:var(--primary)}
-.sutra-block .blank::placeholder{color:var(--text3);font-size:13px}
-.sutra-block .blank.ok{border-bottom-color:var(--secondary);color:var(--secondary)}
-.sutra-block .blank.err{border-bottom-color:var(--danger);color:var(--danger);border-bottom-style:solid}
+.sutra-block{text-align:center;line-height:2.6;letter-spacing:2px;font-size:17px;color:var(--text);min-height:110px;user-select:text}
+.sutra-block .blank{display:inline-block;border:1.5px dashed rgba(124,156,255,.55);border-radius:8px;min-width:58px;height:40px;text-align:center;font-size:18px;padding:0 6px;margin:2px 3px;line-height:1;background:rgba(124,156,255,.08);outline:none;color:var(--primary);transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none}
+.sutra-block .blank::placeholder{color:var(--text3);font-size:13px;opacity:.75}
+.sutra-block .blank:focus{border-color:var(--primary);background:rgba(124,156,255,.16);box-shadow:0 0 0 3px rgba(124,156,255,.22)}
+.sutra-block .blank.ok{border-color:var(--secondary);background:rgba(95,208,168,.14);color:var(--secondary)}
+.sutra-block .blank.err{border-color:var(--danger);background:rgba(239,107,107,.12);color:var(--danger)}
 .sutra-block .c{color:var(--text2)}
+.sutra-verse{display:block;margin:6px 0;line-height:2.4;text-align:center}
+.sutra-block .blank-group{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;vertical-align:middle}
 .sutra-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
+.sutra-actions .btn{flex:1;height:46px;font-size:15px;border-radius:12px}
+.sutra-actions .btn:disabled{opacity:.45;cursor:not-allowed}
 .sutra-result{margin-top:12px;font-size:13px;color:var(--text2);display:none}
 .sutra-result.show{display:block}
 .sutra-answer{margin-top:12px;background:var(--card);border:1px dashed var(--primary);border-radius:10px;padding:14px;position:relative;display:none}
@@ -557,7 +562,7 @@ function renderSutra(){
   }
   const html=filled.replace(/@@(\d+)@@/g,(m,id)=>{
     const b=inputs[+id];
-    return '<sup>'+(+id+1)+'</sup><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'"'+(isToday?'':' disabled')+'><sup>'+b.n+'字</sup>';
+    return '<span class="blank-group"><sup>'+(+id+1)+'</sup><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'" autocomplete="off" autocorrect="off" autocapitalize="off"'+(isToday?'':' disabled')+'><sup>'+b.n+'字</sup></span>';
   });
   blk.innerHTML=html;
   /* 历史日期：禁用提交/重置，仅可看答案 */
