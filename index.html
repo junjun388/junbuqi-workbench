@@ -430,22 +430,60 @@ function setSync(st,txt){
   el.className='sync-dot'+(st==='busy'?' busy':st==='ok'?' ok':st==='fail'?' fail':'');
   tx.textContent=txt||(st==='ok'?'本地已存':st==='fail'?'存储失败':'未连接');
 }
+let _cloudTimer=null,_cloudBusy=false;
+/* 无 DOM 依赖的 Gist 上传（自动备份用） */
 async function cloudPush(){
-  /* 纯前端版：仅本地存储，无云端推送 */
-  setSync('ok','本地已存');
-  return true;
+  const cfg=getSyncConfig();
+  if(!cfg.token){setSync('ok','本地已存');return false;}
+  if(_cloudBusy){setSync('busy','同步中…');return false;}
+  _cloudBusy=true;setSync('busy','同步中…');
+  try{
+    const body={description:'珺不器工作台数据备份',public:false,files:{'workbench_data.json':{content:JSON.stringify(state)}}};
+    let url='https://api.github.com/gists',method='POST';
+    if(cfg.gistId){url='https://api.github.com/gists/'+cfg.gistId;method='PATCH';}
+    const resp=await fetch(url,{method,headers:{'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json'},body:JSON.stringify(body)});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    if(!cfg.gistId&&data.id){cfg.gistId=data.id;saveSyncConfig(cfg);}
+    setSync('ok','已同步 '+new Date().toLocaleTimeString('zh-CN'));
+    return true;
+  }catch(e){setSync('fail','同步失败');return false;}
+  finally{_cloudBusy=false;}
 }
+/* 无 DOM 依赖的 Gist 拉取（启动时自动恢复用） */
 async function cloudLoad(){
-  /* 纯前端版：无需拉取云端 */
-  setSync('ok','本地已存');
+  const cfg=getSyncConfig();
+  if(!cfg.token||!cfg.gistId){setSync('ok','本地已存');return;}
+  setSync('busy','正在拉取云端…');
+  try{
+    const resp=await fetch('https://api.github.com/gists/'+cfg.gistId,{headers:{'Authorization':'Bearer '+cfg.token,'Accept':'application/vnd.github+json'}});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const content=data.files&&data.files['workbench_data.json']&&data.files['workbench_data.json'].content;
+    if(!content){setSync('ok','本地已存');return;}
+    const parsed=JSON.parse(content);
+    if(!parsed.updatedAt){setSync('ok','本地已存');return;}
+    /* 仅当云端更新时间比本地新时才恢复 */
+    if(state.updatedAt&&parsed.updatedAt&&parsed.updatedAt>state.updatedAt){
+      state=parsed;seedDefaults(state);persistLocal();
+      setSync('ok','已从云恢复');
+    }else{
+      setSync('ok','本地已存');
+    }
+  }catch(e){setSync('fail','拉取失败');}
 }
+/* 防抖自动推送：数据变动后延迟 3 秒上传 */
 function scheduleCloud(immediate){
-  /* 纯前端版：无需延迟推送 */
+  const cfg=getSyncConfig();
+  if(!cfg.token){setSync('ok','本地已存');return;}
+  if(_cloudTimer)clearTimeout(_cloudTimer);
+  const delay=immediate?0:3000;
+  _cloudTimer=setTimeout(()=>{cloudPush();},delay);
 }
 function saveData(immediate){
   state.updatedAt=nowStamp();
   persistLocal();
-  setSync('ok','本地已存');
+  scheduleCloud(immediate);
 }
 /* ================== 习惯 ================== */
 function streakOf(hid){
@@ -888,6 +926,9 @@ async function syncDownload(){
 }
 /* ================== 备份提醒 ================== */
 function checkBackupReminder(){
+  const cfg=getSyncConfig();
+  /* 已配置自动云同步，不再提醒手动备份 */
+  if(cfg.token&&cfg.gistId){localStorage.setItem('workbench_last_backup',String(Date.now()));return;}
   const key='workbench_last_backup';
   const last=parseInt(localStorage.getItem(key)||'0');
   const now=Date.now();
@@ -895,7 +936,7 @@ function checkBackupReminder(){
   if(last===0){localStorage.setItem(key,String(now));return;}
   if(now-last>=days7){
     setTimeout(()=>{
-      toast('💡 距上次备份已超过 7 天，建议点击「导出备份」保存数据');
+      toast('💡 距上次备份已超过 7 天，建议配置云同步或点击「导出备份」保存数据');
       localStorage.setItem(key,String(now));
     },3000);
   }
