@@ -155,6 +155,20 @@ input,textarea{font-family:var(--font);color:var(--text)}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:11px;color:var(--text2);overflow:auto;max-height:320px;white-space:pre-wrap;word-break:break-all;line-height:1.6;font-family:ui-monospace,Consolas,monospace}
 .hidden{display:none!important}
+/* 默写结课庆祝 */
+.sutra-complete{text-align:center;padding:24px 16px}
+.sutra-complete .complete-icon{font-size:48px;margin-bottom:12px;animation:pop .5s ease}
+.sutra-complete h3{font-size:18px;color:var(--secondary);margin-bottom:8px}
+.sutra-complete p{font-size:13px;color:var(--text2);line-height:1.8}
+.sutra-complete .reset-sutra-btn{margin-top:16px;height:40px;padding:0 20px;border-radius:10px;background:var(--card-inner);border:1px solid var(--border);color:var(--text2);font-size:13px;cursor:pointer;transition:.2s}
+.sutra-complete .reset-sutra-btn:hover{color:var(--primary);border-color:var(--primary)}
+/* 习惯补卡日期导航 */
+.habit-nav{display:flex;align-items:center;gap:10px;margin-top:10px}
+.habit-nav .day-label{flex:1;text-align:center;font-size:13px;color:var(--text2);font-weight:600}
+/* 云同步弹窗 */
+.sync-settings{margin-top:12px}
+.sync-settings .f-label{margin-top:10px}
+.sync-status{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.8}
 </style>
 </head>
 <body>
@@ -179,6 +193,11 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
       <div class="progress-row">
         <div class="progress-bar"><div class="progress-fill" id="habitBar"></div></div>
         <div class="progress-txt" id="habitProg">0/0</div>
+      </div>
+      <div class="habit-nav">
+        <button class="icon-btn" id="habitPrev" title="前一天">‹</button>
+        <div class="day-label" id="habitDayLabel"></div>
+        <button class="icon-btn" id="habitNext" title="后一天">›</button>
       </div>
       <ul class="habit-list" id="habitList"></ul>
     </div>
@@ -241,6 +260,7 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <button class="mini-btn" id="addHabitBtn">＋ 添加习惯</button>
         <button class="mini-btn" id="exportBtn">导出备份</button>
         <button class="mini-btn" id="importBtn">导入备份</button>
+        <button class="mini-btn" id="syncBtn">☁ 云同步</button>
         <button class="mini-btn" id="rawBtn">查看原始数据</button>
       </div>
       <input type="file" id="importFile" accept=".json,application/json" style="display:none">
@@ -261,6 +281,28 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
     </div>
     <div class="danger-zone" id="habitDelZone" style="display:none">
       <button class="del-btn" id="hDelete">删除这个习惯</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="syncModal">
+  <div class="modal">
+    <h3>☁ 云同步设置</h3>
+    <p style="font-size:12px;color:var(--text3);line-height:1.6;margin-bottom:12px">通过 GitHub Gist 免费同步数据，多设备共享。Token 仅存在本地浏览器，不会上传到任何服务器。</p>
+    <div class="sync-settings">
+      <label class="f-label" for="syncToken">GitHub Token</label>
+      <input type="text" id="syncToken" placeholder="ghp_xxxx..." style="width:100%;height:40px;background:var(--card-inner);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:0 12px;font-size:13px;outline:none;margin-bottom:10px">
+      <label class="f-label" for="syncGistId">Gist ID（首次留空自动创建）</label>
+      <input type="text" id="syncGistId" placeholder="自动创建" style="width:100%;height:40px;background:var(--card-inner);border:1px solid var(--border);border-radius:10px;color:var(--text);padding:0 12px;font-size:13px;outline:none;margin-bottom:14px">
+      <div class="sync-status" id="syncStatus"></div>
+      <div style="display:flex;gap:10px;margin-top:14px">
+        <button class="btn btn-primary" id="syncUpload" style="flex:1">↑ 上传到云</button>
+        <button class="btn btn-ghost" id="syncDownload" style="flex:1">↓ 从云恢复</button>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px">
+        <button class="btn btn-ghost" id="syncSave" style="flex:1">保存设置</button>
+        <button class="btn btn-ghost" id="syncClose" style="flex:1">关闭</button>
+      </div>
     </div>
   </div>
 </div>
@@ -332,8 +374,8 @@ const CONFIG={
   syncServer:'/api/data'
 };
 /* ================== 数据层 ================== */
-const LS_MAIN='workbench_data_v1', LS_BAK='workbench_data_v1_bak';
-let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null;
+const LS_MAIN='workbench_data_v1', LS_BAK='workbench_data_v1_bak', LS_SYNC='workbench_sync_v1';
+let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null, habitCursor=null;
 let syncState='idle', syncTimer=null, cloudTimer=null;
 let journalDebounce={}, chartInst=null;
 const pad2=n=>String(n).padStart(2,'0');
@@ -345,7 +387,7 @@ const parseDate=s=>{const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);};
 const addDays=(s,n)=>{const d=parseDate(s);d.setDate(d.getDate()+n);return fmtDate(d);};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-function defaultState(){const d=todayStr();return {habits:[],metrics:{},habitsLog:{},metricsLog:{},journalLog:{},calmLog:{},sutraLog:{},updatedAt:d+'T00:00:00'};}
+function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,updatedAt:d+'T00:00:00'};}
 function loadData(){
   let main=null,bak=null;
   try{main=JSON.parse(localStorage.getItem(LS_MAIN));}catch(e){}
@@ -354,7 +396,10 @@ function loadData(){
   if(main&&main.updatedAt){data=main;}
   else if(bak&&bak.updatedAt){data=bak;try{localStorage.setItem(LS_MAIN,JSON.stringify(bak));}catch(e){}}
   if(!data)return null;
-  ['habits','metrics','habitsLog','metricsLog','journalLog','calmLog','sutraLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
+  ['habits','habitsLog','journalLog','calmLog','sutraLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
+  if(data.sutraProgress===undefined)data.sutraProgress=0;
+  if(data.metrics!==undefined)delete data.metrics;
+  if(data.metricsLog!==undefined)delete data.metricsLog;
   if(!data.updatedAt)data.updatedAt=new Date().toISOString();
   return data;
 }
@@ -408,26 +453,37 @@ function streakOf(hid){
   while(state.habitsLog[k]&&state.habitsLog[k][hid]){c++;k=addDays(k,-1);}
   return c;
 }
+function habitCur(){return habitCursor||todayKey;}
 function habitProgress(){
+  const cur=habitCur();
   const total=state.habits.length;let done=0;
-  if(total&&state.habitsLog[todayKey]){state.habits.forEach(h=>{if(state.habitsLog[todayKey][h.id])done++;});}
+  if(total&&state.habitsLog[cur]){state.habits.forEach(h=>{if(state.habitsLog[cur][h.id])done++;});}
   return {done,total};
 }
 function toggleHabit(hid){
-  if(!state.habitsLog[todayKey])state.habitsLog[todayKey]={};
-  state.habitsLog[todayKey][hid]=!state.habitsLog[todayKey][hid];
+  const cur=habitCur();
+  if(!state.habitsLog[cur])state.habitsLog[cur]={};
+  state.habitsLog[cur][hid]=!state.habitsLog[cur][hid];
   saveData(true);renderHabits();updateStreak();renderWeek();
 }
 function renderHabits(){
   const list=document.getElementById('habitList');
+  const cur=habitCur();
+  const today=todayStr();
+  const isToday=cur===today;
   const {done,total}=habitProgress();
   document.getElementById('habitBar').style.width=(total?Math.round(done/total*100):0)+'%';
   document.getElementById('habitProg').textContent=done+'/'+total;
-  document.getElementById('habitDate').textContent=(parseDate(todayKey).getMonth()+1)+'月'+parseDate(todayKey).getDate()+'日';
+  document.getElementById('habitDate').textContent=(parseDate(cur).getMonth()+1)+'月'+parseDate(cur).getDate()+'日'+(isToday?'':'（补卡）');
+  /* 补卡日期导航 */
+  const m=parseDate(cur).getMonth()+1,d=parseDate(cur).getDate(),w=weekdayCN[parseDate(cur).getDay()];
+  document.getElementById('habitDayLabel').textContent=isToday?('今天 '+m+'/'+d+' 周'+w):(m+'/'+d+' 周'+w);
+  document.getElementById('habitPrev').disabled=false;
+  document.getElementById('habitNext').style.visibility=isToday?'hidden':'visible';
   list.innerHTML='';
   if(!total){list.innerHTML='<li class="empty-tip">还没有习惯，点击下方「添加习惯」开始</li>';return;}
   state.habits.forEach(h=>{
-    const isDone=!!(state.habitsLog[todayKey]&&state.habitsLog[todayKey][h.id]);
+    const isDone=!!(state.habitsLog[cur]&&state.habitsLog[cur][h.id]);
     const li=document.createElement('li');
     li.className='habit-item'+(isDone?' done':'');
     li.innerHTML='<span class="dot" style="background:'+esc(h.color)+'"></span>'+
@@ -520,10 +576,15 @@ function renderJournal(){
 }
 /* ================== 默写 ================== */
 function dayNum(s){return Math.floor((parseDate(s)-new Date(2000,0,1))/86400000);}
+/* 进度基于 sutraProgress（提交后才推进），不再按日期自动跳 */
+function sutraCurrentIdx(){return Math.min(state.sutraProgress||0,CONFIG.sutraDays-1);}
 function sutraDayIndex(s){
   const cur=s||sutraCursor||todayStr();
-  const base=dayNum(cur)-dayNum(CONFIG.sutraStart);
-  return ((base%CONFIG.sutraDays)+CONFIG.sutraDays)%CONFIG.sutraDays;
+  if(cur===todayStr())return sutraCurrentIdx();
+  /* 历史日期：找那天对应的进度 */
+  const rec=state.sutraLog[cur];
+  if(rec&&rec.segIdx!=null)return rec.segIdx;
+  return Math.min(state.sutraProgress||0,CONFIG.sutraDays-1);
 }
 function sutraDateLabel(){
   const cur=sutraCursor||todayKey;
@@ -537,7 +598,36 @@ function renderSutra(){
   const today=todayStr();
   const isToday=cur===today;
   const total=CONFIG.sutraDays;
-  const idx=sutraDayIndex(cur);
+  const progress=state.sutraProgress||0;
+  /* 全部完成：显示结课庆祝 */
+  if(progress>=total&&isToday){
+    document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
+    document.getElementById('sutraPrev').disabled=false;
+    document.getElementById('sutraNext').style.visibility='hidden';
+    document.getElementById('sutraDone').textContent=total+'/'+total;
+    document.getElementById('sutraPct').textContent='100%';
+    document.getElementById('sutraBar').style.width='100%';
+    document.getElementById('sutraTitle').textContent='🎉 全部完成！'+CONFIG.sutraName+' '+CONFIG.sutraAuthor;
+    const blk=document.getElementById('sutraBlock');
+    blk.innerHTML='<div class="sutra-complete">'+
+      '<div class="complete-icon">🏆</div>'+
+      '<h3>恭喜！'+CONFIG.sutraName+' 全部 10 段默写完成</h3>'+
+      '<p>你已逐段背完整篇 '+CONFIG.sutraName+'，太了不起了！<br>可翻看历史记录复习，或重置后重新挑战。</p>'+
+      '<button class="reset-sutra-btn" id="sutraRestartBtn">重新开始</button>'+
+      '</div>';
+    document.getElementById('sutraSubmit').disabled=true;
+    document.getElementById('sutraReset').disabled=true;
+    document.getElementById('sutraResult').classList.remove('show');
+    document.getElementById('sutraAnswerBox').classList.remove('open');
+    var restartBtn=document.getElementById('sutraRestartBtn');
+    if(restartBtn)restartBtn.onclick=function(){
+      if(confirm('确定重新开始全部默写吗？这将清空所有默写记录。')){
+        state.sutraProgress=0;state.sutraLog={};saveData(true);renderSutra();renderSutraHistory();toast('已重新开始');
+      }
+    };
+    return;
+  }
+  const idx=isToday?sutraCurrentIdx():sutraDayIndex(cur);
   document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
   document.getElementById('sutraPrev').disabled=false;
   document.getElementById('sutraNext').style.visibility=isToday?'hidden':'visible';
@@ -581,9 +671,10 @@ function renderSutra(){
 function submitSutra(){
   const cur=sutraCursor||todayKey;
   const blk=document.getElementById('sutraBlock');
-  const idx=sutraDayIndex(cur);
+  const idx=sutraCurrentIdx();
   const segTpl=CONFIG.sutraBlanks.find(b=>b.seg===idx);
   const inpArr=[].slice.call(blk.querySelectorAll('.blank'));
+  if(!inpArr.length)return;
   let correct=0;
   const values={},okay={};
   inpArr.forEach((inp,di)=>{
@@ -600,18 +691,30 @@ function submitSutra(){
   const rec=state.sutraLog[cur];
   rec.tries=(rec.tries||0)+1;
   rec.done=true;rec.values=values;rec.okay=okay;rec.allT=correct===all;
+  rec.segIdx=idx;
+  rec.date=cur;
   const res=document.getElementById('sutraResult');
   res.textContent='正确 '+correct+'/'+all+' · 第 '+rec.tries+' 次尝试';
   res.style.color=correct===all?'var(--secondary)':'var(--danger)';
   res.classList.add('show');
+  /* 全对才推进进度 */
+  if(correct===all&&(state.sutraProgress||0)===idx){
+    state.sutraProgress=idx+1;
+  }
   saveData(true);renderSutraHistory();
+  /* 如果刚完成最后一段，重新渲染显示庆祝 */
+  if(state.sutraProgress>=CONFIG.sutraDays){
+    setTimeout(()=>{renderSutra();},800);
+  }
 }
 function toggleAnswer(){
   const box=document.getElementById('sutraAnswerBox');
   const btn=document.getElementById('sutraAnswerToggle');
   const cur=sutraCursor||todayKey;
-  const idx=sutraDayIndex(cur);
-  const seg=CONFIG.sutraSegments[idx];
+  const idx=isToday?((cur===todayStr())?sutraCurrentIdx():sutraDayIndex(cur)):sutraDayIndex(cur);
+  var segIdx;
+  if(cur===todayStr())segIdx=sutraCurrentIdx();else segIdx=sutraDayIndex(cur);
+  const seg=CONFIG.sutraSegments[segIdx];
   if(box.classList.contains('open')){box.classList.remove('open');btn.textContent='看答案';return;}
   document.getElementById('sutraAnswerBody').textContent=seg;
   box.classList.add('open');btn.textContent='收起答案';
@@ -714,17 +817,104 @@ function copyRaw(){
   if(navigator.clipboard){navigator.clipboard.writeText(txt).then(()=>toast('已复制'));}
   else{toast('复制失败');}
 }
+/* ================== 云同步（GitHub Gist） ================== */
+function getSyncConfig(){
+  try{return JSON.parse(localStorage.getItem(LS_SYNC))||{};}catch(e){return {};}
+}
+function saveSyncConfig(cfg){
+  try{localStorage.setItem(LS_SYNC,JSON.stringify(cfg));}catch(e){}
+}
+function openSyncModal(){
+  const cfg=getSyncConfig();
+  document.getElementById('syncToken').value=cfg.token||'';
+  document.getElementById('syncGistId').value=cfg.gistId||'';
+  const st=document.getElementById('syncStatus');
+  if(cfg.token&&cfg.gistId){st.textContent='✓ 已配置同步（Gist ID: '+cfg.gistId.slice(0,8)+'...）';st.style.color='var(--secondary)';}
+  else if(cfg.token&&!cfg.gistId){st.textContent='Token 已保存，首次上传将自动创建 Gist';st.style.color='var(--text2)';}
+  else{st.textContent='未配置，请填入 GitHub Token 后保存';st.style.color='var(--text3)';}
+  document.getElementById('syncModal').classList.add('on');
+}
+function closeSyncModal(){document.getElementById('syncModal').classList.remove('on');}
+function saveSyncSettings(){
+  const cfg=getSyncConfig();
+  cfg.token=document.getElementById('syncToken').value.trim();
+  const gistId=document.getElementById('syncGistId').value.trim();
+  if(gistId)cfg.gistId=gistId;
+  saveSyncConfig(cfg);
+  toast('设置已保存');
+  openSyncModal(); /* 刷新状态 */
+}
+async function syncUpload(){
+  const cfg=getSyncConfig();
+  const token=document.getElementById('syncToken').value.trim()||cfg.token;
+  if(!token){toast('请先填入 GitHub Token');return;}
+  const st=document.getElementById('syncStatus');
+  st.textContent='正在上传...';st.style.color='var(--warn)';
+  try{
+    const payload=JSON.stringify(state);
+    const body={description:'珺不器工作台数据备份',public:false,files:{'workbench_data.json':{content:payload}}};
+    let url='https://api.github.com/gists',method='POST';
+    if(cfg.gistId){url='https://api.github.com/gists/'+cfg.gistId;method='PATCH';}
+    const resp=await fetch(url,{method,headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'},body:JSON.stringify(body)});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    cfg.token=token;cfg.gistId=data.id;saveSyncConfig(cfg);
+    st.textContent='✓ 上传成功（'+new Date().toLocaleString('zh-CN')+'）';st.style.color='var(--secondary)';
+    document.getElementById('syncGistId').value=data.id;
+    toast('已上传到云');
+  }catch(e){st.textContent='✗ 上传失败：'+e.message;st.style.color='var(--danger)';}
+}
+async function syncDownload(){
+  const cfg=getSyncConfig();
+  if(!cfg.gistId){toast('请先上传一次以创建 Gist');return;}
+  const token=document.getElementById('syncToken').value.trim()||cfg.token;
+  if(!token){toast('请先填入 Token');return;}
+  const st=document.getElementById('syncStatus');
+  st.textContent='正在下载...';st.style.color='var(--warn)';
+  try{
+    const resp=await fetch('https://api.github.com/gists/'+cfg.gistId,{headers:{'Authorization':'Bearer '+token,'Accept':'application/vnd.github+json'}});
+    if(!resp.ok)throw new Error('HTTP '+resp.status);
+    const data=await resp.json();
+    const content=data.files&&data.files['workbench_data.json']&&data.files['workbench_data.json'].content;
+    if(!content)throw new Error('云端数据为空');
+    const parsed=JSON.parse(content);
+    if(!parsed.updatedAt)throw new Error('格式不正确');
+    if(confirm('云端数据更新于 '+parsed.updatedAt+'\n确定覆盖本地数据吗？')){
+      state=parsed;seedDefaults(state);persistLocal();saveData(true);renderAll();
+      st.textContent='✓ 下载成功，已恢复数据';st.style.color='var(--secondary)';
+      toast('已从云恢复');
+    }else{st.textContent='已取消';st.style.color='var(--text2)';}
+  }catch(e){st.textContent='✗ 下载失败：'+e.message;st.style.color='var(--danger)';}
+}
+/* ================== 备份提醒 ================== */
+function checkBackupReminder(){
+  const key='workbench_last_backup';
+  const last=parseInt(localStorage.getItem(key)||'0');
+  const now=Date.now();
+  const days7=7*24*60*60*1000;
+  if(last===0){localStorage.setItem(key,String(now));return;}
+  if(now-last>=days7){
+    setTimeout(()=>{
+      toast('💡 距上次备份已超过 7 天，建议点击「导出备份」保存数据');
+      localStorage.setItem(key,String(now));
+    },3000);
+  }
+}
 /* ================== 初始化 ================== */
 function bindEvents(){
   document.getElementById('addHabitBtn').onclick=()=>openHabitModal();
-  document.getElementById('exportBtn').onclick=exportBackup;
+  document.getElementById('exportBtn').onclick=function(){exportBackup();localStorage.setItem('workbench_last_backup',String(Date.now()));};
   document.getElementById('importBtn').onclick=()=>document.getElementById('importFile').click();
   document.getElementById('importFile').onchange=importBackup;
+  document.getElementById('syncBtn').onclick=openSyncModal;
   document.getElementById('rawBtn').onclick=viewRaw;
   document.getElementById('hSave').onclick=saveHabit;
   document.getElementById('hCancel').onclick=closeHabitModal;
   document.getElementById('hDelete').onclick=deleteHabit;
   document.getElementById('habitModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeHabitModal();});
+  /* 习惯补卡导航 */
+  document.getElementById('habitPrev').onclick=()=>{habitCursor=addDays(habitCursor||todayKey,-1);renderHabits();};
+  document.getElementById('habitNext').onclick=()=>{habitCursor=addDays(habitCursor||todayKey,1);if(habitCursor>todayKey)habitCursor=todayKey;renderHabits();};
   document.getElementById('journalPrev').onclick=()=>{journalCursor=addDays(journalCursor||todayKey,-1);renderJournal();};
   document.getElementById('journalNext').onclick=()=>{journalCursor=addDays(journalCursor||todayKey,1);if(journalCursor>todayKey)journalCursor=todayKey;renderJournal();};
   document.getElementById('sutraSubmit').onclick=submitSutra;
@@ -737,8 +927,14 @@ function bindEvents(){
   document.getElementById('mind-mask').addEventListener('click',closeMind);
   document.getElementById('rawClose').onclick=()=>document.getElementById('rawModal').classList.remove('on');
   document.getElementById('rawCopy').onclick=copyRaw;
+  /* 云同步弹窗 */
+  document.getElementById('syncSave').onclick=saveSyncSettings;
+  document.getElementById('syncUpload').onclick=syncUpload;
+  document.getElementById('syncDownload').onclick=syncDownload;
+  document.getElementById('syncClose').onclick=closeSyncModal;
+  document.getElementById('syncModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSyncModal();});
   document.getElementById('syncBox').onclick=null;
-  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;renderAll();}},30000);
+  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;habitCursor=null;renderAll();}},30000);
 }
 function renderAll(){
   renderHabits();renderJournal();renderSutra();renderSutraHistory();renderWeek();
@@ -753,6 +949,7 @@ async function init(){
   renderAll();
   await cloudLoad();
   renderAll();
+  checkBackupReminder();
 }
 init();
 </script>
