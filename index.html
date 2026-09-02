@@ -213,7 +213,7 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
     </div>
 
     <div class="card">
-      <h2>每日默写 <span class="sub" id="sutraSub">《兰亭集序》· 按天推进</span></h2>
+      <h2>每日默写 <span class="sub" id="sutraSub">《兰亭集序》· 按进度推进</span></h2>
       <div class="journal-nav" style="margin-top:12px">
         <button class="icon-btn" id="sutraPrev" title="前一天">‹</button>
         <div class="day-label" id="sutraDayLabel"></div>
@@ -740,9 +740,13 @@ function submitSutra(){
     state.sutraProgress=idx+1;
   }
   saveData(true);renderSutraHistory();
+  /* 全对后自动推进到下一段（延迟 1.2 秒让用户看到判分结果） */
+  if(correct===all&&state.sutraProgress>idx){
+    setTimeout(()=>{renderSutra();},1200);
+  }
   /* 如果刚完成最后一段，重新渲染显示庆祝 */
   if(state.sutraProgress>=CONFIG.sutraDays){
-    setTimeout(()=>{renderSutra();},800);
+    setTimeout(()=>{renderSutra();},1200);
   }
 }
 function toggleAnswer(){
