@@ -753,7 +753,6 @@ function toggleAnswer(){
   const box=document.getElementById('sutraAnswerBox');
   const btn=document.getElementById('sutraAnswerToggle');
   const cur=sutraCursor||todayKey;
-  const idx=isToday?((cur===todayStr())?sutraCurrentIdx():sutraDayIndex(cur)):sutraDayIndex(cur);
   var segIdx;
   if(cur===todayStr())segIdx=sutraCurrentIdx();else segIdx=sutraDayIndex(cur);
   const seg=CONFIG.sutraSegments[segIdx];
