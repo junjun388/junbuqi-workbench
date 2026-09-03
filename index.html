@@ -486,8 +486,13 @@ function saveData(immediate){
   scheduleCloud(immediate);
 }
 /* ================== 习惯 ================== */
-function streakOf(hid){
-  let c=0,k=todayKey;
+/* 连续天数：从指定日期往回数连续打卡的天数 */
+function streakOf(hid,from){
+  let c=0,k=from||todayKey;
+  /* 如果起始日没打卡，往前找一天（容错：今天还没打但昨天起连续） */
+  if(!(state.habitsLog[k]&&state.habitsLog[k][hid])&&k===todayKey){
+    k=addDays(k,-1);
+  }
   while(state.habitsLog[k]&&state.habitsLog[k][hid]){c++;k=addDays(k,-1);}
   return c;
 }
@@ -526,7 +531,7 @@ function renderHabits(){
     li.className='habit-item'+(isDone?' done':'');
     li.innerHTML='<span class="dot" style="background:'+esc(h.color)+'"></span>'+
       '<span class="name">'+esc(h.name)+'</span>'+
-      '<span class="streak">🔥 '+streakOf(h.id)+' 天</span>'+
+      '<span class="streak">🔥 '+streakOf(h.id,cur)+' 天</span>'+
       '<button class="check" data-id="'+esc(h.id)+'">'+(isDone?'✓':'')+'</button>'+
       '<button class="edit-h" data-edit="'+esc(h.id)+'" title="编辑">✎</button>';
     list.appendChild(li);
