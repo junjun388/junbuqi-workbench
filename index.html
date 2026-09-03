@@ -486,14 +486,21 @@ function saveData(immediate){
   scheduleCloud(immediate);
 }
 /* ================== 习惯 ================== */
-/* 连续天数：从指定日期往回数连续打卡的天数 */
+/* 连续天数：从本周一开始统计连续打卡的天数（不超过本周） */
 function streakOf(hid,from){
-  let c=0,k=from||todayKey;
-  /* 如果起始日没打卡，往前找一天（容错：今天还没打但昨天起连续） */
-  if(!(state.habitsLog[k]&&state.habitsLog[k][hid])&&k===todayKey){
+  const ref=from||todayKey;
+  /* 计算本周一日期 */
+  const d=parseDate(ref);
+  const dow=d.getDay(); /* 0=周日,1=周一...6=周六 */
+  const diff=dow===0?6:dow-1; /* 距周一的天数 */
+  const monday=addDays(ref,-diff);
+  let c=0,k=ref;
+  /* 从参考日往回数到周一，数连续打卡天数 */
+  while(k>=monday){
+    if(state.habitsLog[k]&&state.habitsLog[k][hid])c++;
+    else break;
     k=addDays(k,-1);
   }
-  while(state.habitsLog[k]&&state.habitsLog[k][hid]){c++;k=addDays(k,-1);}
   return c;
 }
 function habitCur(){return habitCursor||todayKey;}
