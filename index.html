@@ -237,10 +237,6 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <button class="ans-close" id="ansClose">✕</button>
         <div class="ans-body" id="sutraAnswerBody"></div>
       </div>
-      <div class="sutra-history">
-        <div class="sh-title">近 14 天默写记录</div>
-        <div id="sutraHistory"></div>
-      </div>
     </div>
   </div>
 
@@ -664,7 +660,7 @@ function renderSutra(){
     var restartBtn=document.getElementById('sutraRestartBtn');
     if(restartBtn)restartBtn.onclick=function(){
       if(confirm('确定重新开始全部默写吗？这将清空所有默写记录。')){
-        state.sutraProgress=0;state.sutraLog={};saveData(true);renderSutra();renderSutraHistory();toast('已重新开始');
+        state.sutraProgress=0;state.sutraLog={};saveData(true);renderSutra();toast('已重新开始');
       }
     };
     return;
@@ -743,7 +739,7 @@ function submitSutra(){
   if(correct===all&&(state.sutraProgress||0)===idx){
     state.sutraProgress=idx+1;
   }
-  saveData(true);renderSutraHistory();
+  saveData(true);
   /* 全对后自动推进到下一段（延迟 1.2 秒让用户看到判分结果） */
   if(correct===all&&state.sutraProgress>idx){
     setTimeout(()=>{renderSutra();},1200);
@@ -768,7 +764,7 @@ function resetSutra(){
   const cur=sutraCursor||todayKey;
   if(!confirm('确定重置 '+cur+' 的默写记录吗？'))return;
   delete state.sutraLog[cur];
-  saveData(true);renderSutra();renderSutraHistory();toast('已重置');
+  saveData(true);renderSutra();toast('已重置');
 }
 function renderSutraHistory(){
   const wrap=document.getElementById('sutraHistory');
@@ -969,8 +965,8 @@ function bindEvents(){
   document.getElementById('sutraAnswerToggle').onclick=toggleAnswer;
   document.getElementById('ansClose').onclick=toggleAnswer;
   document.getElementById('sutraReset').onclick=resetSutra;
-  document.getElementById('sutraPrev').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,-1);renderSutra();renderSutraHistory();};
-  document.getElementById('sutraNext').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,1);if(sutraCursor>todayKey)sutraCursor=todayKey;renderSutra();renderSutraHistory();};
+  document.getElementById('sutraPrev').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,-1);renderSutra();};
+  document.getElementById('sutraNext').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,1);if(sutraCursor>todayKey)sutraCursor=todayKey;renderSutra();};
   document.getElementById('mindBtn').onclick=openMind;
   document.getElementById('mind-mask').addEventListener('click',closeMind);
   document.getElementById('rawClose').onclick=()=>document.getElementById('rawModal').classList.remove('on');
@@ -985,7 +981,7 @@ function bindEvents(){
   setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;habitCursor=null;renderAll();}},30000);
 }
 function renderAll(){
-  renderHabits();renderJournal();renderSutra();renderSutraHistory();renderWeek();
+  renderHabits();renderJournal();renderSutra();renderWeek();
   const now=new Date();
   document.getElementById('todayStr').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 · 星期'+weekdayCN[now.getDay()];
   const today=state.calmLog[todayKey]||0;let total=0;Object.keys(state.calmLog).forEach(k=>total+=state.calmLog[k]);
