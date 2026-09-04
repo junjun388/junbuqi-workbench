@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +8,6 @@
 <meta http-equiv="Expires" content="0">
 <title>珺不器 · 习惯 × 感悟 × 每日默写</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='52'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js" onerror="this.remove();var s=document.createElement('script');s.src='https://unpkg.com/chart.js@4.4.0/dist/chart.umd.min.js';document.head.appendChild(s);"></script>
 <style>
 :root{
   --bg:#0f1115; --card:#1c2029; --card-inner:#222734;
@@ -162,6 +161,23 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
 .sync-settings{margin-top:12px}
 .sync-settings .f-label{margin-top:10px}
 .sync-status{font-size:12px;color:var(--text2);margin-top:10px;line-height:1.8}
+/* 本周分析 */
+.wk-overview{font-size:13px;color:var(--text2);background:var(--card-inner);border:1px solid var(--border);border-radius:12px;padding:10px 12px;line-height:1.7}
+.wk-overview b{color:var(--primary);font-size:15px}
+.wk-habits{margin-top:10px;display:flex;flex-direction:column;gap:7px}
+.wk-item{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--text2)}
+.wk-dot{width:9px;height:9px;border-radius:50%;flex:none}
+.wk-name{flex:none;min-width:72px;max-width:96px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wk-bar{flex:1;height:8px;background:var(--card-inner);border-radius:99px;overflow:hidden;min-width:36px}
+.wk-fill{display:block;height:100%;border-radius:99px}
+.wk-count{flex:none;font-variant-numeric:tabular-nums;width:32px;text-align:right}
+.wk-tag{flex:none;font-size:10px;padding:1px 6px;border-radius:99px;border:1px solid;white-space:nowrap}
+.wk-tips{margin-top:12px;display:flex;flex-direction:column;gap:8px}
+.wk-tip{font-size:12px;color:var(--text2);background:var(--card-inner);border-left:3px solid var(--border);border-radius:8px;padding:9px 11px;line-height:1.6}
+.wk-tip b{color:var(--text)}
+.wk-tip.warn{border-left-color:var(--warn)}
+.wk-tip.ok{border-left-color:var(--secondary)}
+.wk-tip.today{border-left-color:var(--primary)}
 </style>
 </head>
 <body>
@@ -242,8 +258,7 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
           <span class="sync-dot" id="syncDot"></span><span id="syncTxt">本地存储</span>
         </div>
       </div>
-      <div style="height:180px;position:relative"><canvas id="weekChart"></canvas></div>
-      <div id="weekStats" style="font-size:12px;color:var(--text2);margin-top:10px"></div>
+      <div id="weekStats"></div>
       <div class="toolbar" style="margin-top:14px">
         <button class="mini-btn" id="addHabitBtn">＋ 添加习惯</button>
         <button class="mini-btn" id="exportBtn">导出备份</button>
@@ -365,7 +380,7 @@ const CONFIG={
 const LS_MAIN='workbench_data_v1', LS_BAK='workbench_data_v1_bak', LS_SYNC='workbench_sync_v1';
 let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null, habitCursor=null;
 let syncState='idle', syncTimer=null, cloudTimer=null;
-let journalDebounce={}, chartInst=null;
+let journalDebounce={};
 const pad2=n=>String(n).padStart(2,'0');
 const fmtDate=d=>d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());
 const nowStamp=()=>{const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate())+'T'+pad2(d.getHours())+':'+pad2(d.getMinutes())+':'+pad2(d.getSeconds());};
@@ -779,21 +794,53 @@ function weekRangeStr(){
 function renderWeek(){
   const wrap=document.getElementById('weekRange');
   wrap.textContent=weekRangeStr();
+  const host=document.getElementById('weekStats');
+  if(!state.habits.length){host.innerHTML='<div class="empty-tip">添加习惯后，这里会出现每周分析</div>';return;}
   const now=new Date();const dow=(now.getDay()+6)%7;
   const days=[];for(let i=0;i<7;i++){const d=new Date(now);d.setDate(now.getDate()-dow+i);days.push(fmtDate(d));}
-  const labels=days.map(d=>'周'+weekdayCN[parseDate(d).getDay()]);
-  const data=days.map(d=>{
-    if(!state.habits.length)return 0;
+  /* 每日完成率 */
+  const daily=days.map(d=>{
     const log=state.habitsLog[d]||{};
     let c=0;state.habits.forEach(h=>{if(log[h.id])c++;});
     return Math.round(c/state.habits.length*100);
   });
-  if(chartInst)chartInst.destroy();
-  const ctx=document.getElementById('weekChart');
-  if(!ctx)return;
-  chartInst=new Chart(ctx,{type:'bar',data:{labels,datasets:[{label:'习惯完成率 %',data,backgroundColor:'rgba(124,156,255,.75)',borderRadius:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,max:100,ticks:{color:'#6b7488',font:{size:11}},grid:{color:'rgba(255,255,255,.05)'}},x:{ticks:{color:'#9aa3b2',font:{size:11}},grid:{display:false}}}}});
-  const avg=Math.round(data.reduce((a,b)=>a+b,0)/7);
-  document.getElementById('weekStats').textContent='本周平均完成率 '+avg+'%'+(avg>=80?' 🎉':'');
+  const avg=Math.round(daily.reduce((a,b)=>a+b,0)/7);
+  /* 逐习惯本周次数 */
+  const per=state.habits.map(h=>{
+    let c=0;days.forEach(d=>{if(state.habitsLog[d]&&state.habitsLog[d][h.id])c++;});
+    return {id:h.id,name:h.name,color:h.color,count:c};
+  });
+  const sorted=per.slice().sort((a,b)=>b.count-a.count);
+  const best=sorted[0],worst=sorted[sorted.length-1];
+  /* 全勤天数 & 最长连续 */
+  let full=0,run=0,maxRun=0;
+  days.forEach(d=>{if(dayComplete(d)){full++;run++;maxRun=Math.max(maxRun,run);}else{run=0;}});
+  /* 今日进度 */
+  const todayLog=state.habitsLog[todayKey]||{};
+  const todayDone=state.habits.filter(h=>todayLog[h.id]).length;
+  const tagOf=c=>c>=7?['满勤','var(--secondary)']:c>=5?['稳定','var(--primary)']:c>=3?['待加强','var(--warn)']:['薄弱','var(--danger)'];
+  let h='';
+  h+='<div class="wk-overview">本周平均完成率 <b>'+avg+'%</b>'+(avg>=80?' 🎉':avg>=60?' 👍':' 💪')+'　·　全勤 '+full+' 天'+(maxRun>1?' · 最长连续 '+maxRun+' 天':'')+'</div>';
+  h+='<div class="wk-habits">';
+  per.forEach(p=>{
+    const t=tagOf(p.count);
+    const pct=Math.round(p.count/7*100);
+    h+='<div class="wk-item">'+
+      '<span class="wk-dot" style="background:'+esc(p.color)+'"></span>'+
+      '<span class="wk-name" title="'+esc(p.name)+'">'+esc(p.name)+'</span>'+
+      '<span class="wk-bar"><span class="wk-fill" style="width:'+pct+'%;background:'+esc(p.color)+'"></span></span>'+
+      '<span class="wk-count">'+p.count+'/7</span>'+
+      '<span class="wk-tag" style="color:'+t[1]+';border-color:'+t[1]+'">'+t[0]+'</span></div>';
+  });
+  h+='</div>';
+  h+='<div class="wk-tips">';
+  if(worst.count<=3){h+='<div class="wk-tip warn">最薄弱：<b>'+esc(worst.name)+'</b> 本周仅 '+worst.count+' 次，是最大缺口。明早把它当作第一件事来做，先补最短的那块板。</div>';}
+  else if(best.count===7&&best.id!==worst.id){h+='<div class="wk-tip ok">最稳定：<b>'+esc(best.name)+'</b> 满勤 7 天，是你的黄金习惯，把它固定为每天的起点。</div>';}
+  const left=state.habits.length-todayDone;
+  if(left>0){h+='<div class="wk-tip today">今天还差 <b>'+left+'</b> 个习惯未完成，现在开始刚好来得及，集齐今日全勤。</div>';}
+  else{h+='<div class="wk-tip today ok">今日习惯全部达成，好习惯就是这样一点点累积起来的。</div>';}
+  h+='</div>';
+  host.innerHTML=h;
 }
 /* ================== 工具 ================== */
 let toastTimer=null;
