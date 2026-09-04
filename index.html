@@ -252,7 +252,6 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <div class="sync-box" id="syncBox" title="数据存储在本地浏览器">
           <span class="sync-dot" id="syncDot"></span><span id="syncTxt">本地存储</span>
         </div>
-        <div class="streak-badge" title="本周累计打卡次数"><b id="streakNum">0</b><span>次打卡</span></div>
       </div>
       <div style="height:180px;position:relative"><canvas id="weekChart"></canvas></div>
       <div id="weekStats" style="font-size:12px;color:var(--text2);margin-top:10px"></div>
@@ -486,20 +485,17 @@ function saveData(immediate){
   scheduleCloud(immediate);
 }
 /* ================== 习惯 ================== */
-/* 连续天数：从本周一开始统计连续打卡的天数（不超过本周） */
-function streakOf(hid,from){
+/* 本周累计打卡次数（从本周一到指定日期，该习惯的打卡总天数） */
+function weekCountOf(hid,from){
   const ref=from||todayKey;
-  /* 计算本周一日期 */
   const d=parseDate(ref);
-  const dow=d.getDay(); /* 0=周日,1=周一...6=周六 */
-  const diff=dow===0?6:dow-1; /* 距周一的天数 */
+  const dow=d.getDay();
+  const diff=dow===0?6:dow-1;
   const monday=addDays(ref,-diff);
-  let c=0,k=ref;
-  /* 从参考日往回数到周一，数连续打卡天数 */
-  while(k>=monday){
+  let c=0,k=monday;
+  while(k<=ref){
     if(state.habitsLog[k]&&state.habitsLog[k][hid])c++;
-    else break;
-    k=addDays(k,-1);
+    k=addDays(k,1);
   }
   return c;
 }
@@ -514,7 +510,7 @@ function toggleHabit(hid){
   const cur=habitCur();
   if(!state.habitsLog[cur])state.habitsLog[cur]={};
   state.habitsLog[cur][hid]=!state.habitsLog[cur][hid];
-  saveData(true);renderHabits();updateStreak();renderWeek();
+  saveData(true);renderHabits();renderWeek();
 }
 function renderHabits(){
   const list=document.getElementById('habitList');
@@ -538,7 +534,7 @@ function renderHabits(){
     li.className='habit-item'+(isDone?' done':'');
     li.innerHTML='<span class="dot" style="background:'+esc(h.color)+'"></span>'+
       '<span class="name">'+esc(h.name)+'</span>'+
-      '<span class="streak">🔥 '+streakOf(h.id,cur)+' 天</span>'+
+      '<span class="streak">🔥 '+weekCountOf(h.id,cur)+' 次</span>'+
       '<button class="check" data-id="'+esc(h.id)+'">'+(isDone?'✓':'')+'</button>'+
       '<button class="edit-h" data-edit="'+esc(h.id)+'" title="编辑">✎</button>';
     list.appendChild(li);
@@ -552,19 +548,9 @@ function dayComplete(dayKey){
   let c=0;state.habits.forEach(h=>{if(log[h.id])c++;});
   return c===total;
 }
-/* 本周累计打卡次数（本周一到今天各习惯打卡数总和） */
+/* 本周累计打卡次数 */
 function updateStreak(){
-  const d=parseDate(todayKey);
-  const dow=d.getDay();
-  const diff=dow===0?6:dow-1;
-  const monday=addDays(todayKey,-diff);
-  let c=0,k=monday;
-  while(k<=todayKey){
-    const log=state.habitsLog[k];
-    if(log){state.habits.forEach(h=>{if(log[h.id])c++;});}
-    k=addDays(k,1);
-  }
-  document.getElementById('streakNum').textContent=c;
+  /* 兼容旧调用，无操作 */
 }
 /* 习惯弹窗 */
 function openHabitModal(id){
@@ -587,12 +573,12 @@ function saveHabit(){
   const color=document.getElementById('hColor').value;
   if(editingHabit){editingHabit.name=name;editingHabit.color=color;}
   else{state.habits.push({id:uid(),name,color});}
-  saveData(true);renderHabits();updateStreak();closeHabitModal();toast('已保存');
+  saveData(true);renderHabits();closeHabitModal();toast('已保存');
 }
 function deleteHabit(){
   if(!editingHabit)return;
   state.habits=state.habits.filter(h=>h.id!==editingHabit.id);
-  saveData(true);renderHabits();updateStreak();closeHabitModal();toast('已删除');
+  saveData(true);renderHabits();closeHabitModal();toast('已删除');
 }
 /* ================== 感悟 ================== */
 function renderJournal(){
