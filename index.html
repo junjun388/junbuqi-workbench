@@ -6,7 +6,7 @@
 <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
 <meta http-equiv="Expires" content="0">
-<title>珺不器 · 习惯 × 感悟 × 每日默写</title>
+<title>珺不器 · 习惯 × 感悟 × 每日背诵</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2064%2064'%3E%3Ctext%20y='.9em'%20font-size='52'%3E%F0%9F%8C%BF%3C/text%3E%3C/svg%3E">
 <style>
 :root{
@@ -89,19 +89,29 @@ input,textarea{font-family:var(--font);color:var(--text)}
 .j-input:focus{border-color:var(--primary)}
 .j-saved{position:absolute;top:-8px;right:8px;font-size:11px;color:var(--secondary);opacity:0;transition:opacity .4s;pointer-events:none;background:var(--card);padding:0 5px;border-radius:4px;z-index:2}
 .j-saved.show{opacity:1}
-/* 默写 */
+/* 背诵 */
 .sutra-progress{margin-top:12px}
 .sutra-stage{font-size:12px;color:var(--text2);display:flex;justify-content:space-between;margin-bottom:6px}
+.sutra-steps{display:flex;gap:6px;margin-top:10px}
+.sutra-step{flex:1;text-align:center;padding:7px 2px;border-radius:10px;background:var(--card-inner);border:1px solid var(--border);font-size:11px;color:var(--text3);transition:.25s}
+.sutra-step.active{background:rgba(124,156,255,.15);border-color:var(--primary);color:var(--primary)}
+.sutra-step.done{border-color:var(--secondary);color:var(--secondary)}
+.sutra-step .step-num{display:inline-block;width:18px;height:18px;border-radius:50%;border:1px solid currentColor;font-size:10px;line-height:16px;margin-right:3px;vertical-align:middle}
+.sutra-step.active .step-num{background:var(--primary);color:#08111f;border-color:var(--primary)}
+.sutra-step.done .step-num{background:var(--secondary);color:#08130e;border-color:var(--secondary)}
 .sutra-panel{background:var(--card-inner);border:1px solid var(--border);border-radius:12px;padding:18px 14px;margin-top:12px;position:relative}
 .sutra-title{text-align:center;font-size:13px;color:var(--text3);margin-bottom:12px;letter-spacing:2px}
-.sutra-block{text-align:center;line-height:2.6;letter-spacing:2px;font-size:17px;color:var(--text);min-height:110px;user-select:text}
+.sutra-anchor{text-align:center;font-size:36px;margin-bottom:4px}
+.sutra-anchor-note{text-align:center;font-size:12px;color:var(--text3);margin-bottom:12px}
+.sutra-read{text-align:center;line-height:2.6;letter-spacing:2px;font-size:17px;color:var(--text);min-height:80px}
+.sutra-read ruby rt{font-size:11px;color:var(--accent);font-weight:400;letter-spacing:0}
+.sutra-tricky{margin-top:12px;font-size:12px;color:var(--warn);background:rgba(232,179,57,.08);border:1px solid rgba(232,179,57,.25);border-radius:8px;padding:8px 12px;line-height:1.6}
+.sutra-block{text-align:center;line-height:2.6;letter-spacing:2px;font-size:17px;color:var(--text);min-height:80px;user-select:text}
 .sutra-block .blank{display:inline-block;border:1.5px dashed rgba(124,156,255,.55);border-radius:8px;height:40px;text-align:center;font-size:16px;padding:0 6px;margin:2px 3px;line-height:1;background:rgba(124,156,255,.08);outline:none;color:var(--primary);transition:border-color .2s,background .2s,box-shadow .2s;-webkit-appearance:none;width:auto}
 .sutra-block .blank::placeholder{color:var(--text3);font-size:13px;opacity:.75}
 .sutra-block .blank:focus{border-color:var(--primary);background:rgba(124,156,255,.16);box-shadow:0 0 0 3px rgba(124,156,255,.22)}
 .sutra-block .blank.ok{border-color:var(--secondary);background:rgba(95,208,168,.14);color:var(--secondary)}
 .sutra-block .blank.err{border-color:var(--danger);background:rgba(239,107,107,.12);color:var(--danger)}
-.sutra-block .c{color:var(--text2)}
-.sutra-verse{display:block;margin:6px 0;line-height:2.4;text-align:center}
 .sutra-block .blank-group{display:inline-flex;align-items:center;gap:2px;white-space:nowrap;vertical-align:middle}
 .sutra-actions{display:flex;gap:8px;margin-top:14px;flex-wrap:wrap}
 .sutra-actions .btn{flex:1;height:46px;font-size:15px;border-radius:12px}
@@ -212,7 +222,7 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
     </div>
 
     <div class="card">
-      <h2>每日默写 <span class="sub" id="sutraSub">《兰亭集序》· 按进度推进</span></h2>
+      <h2>每日背诵 <span class="sub" id="sutraSub">《少年中国说》· 三步背诵法</span></h2>
       <div class="journal-nav" style="margin-top:12px">
         <button class="icon-btn" id="sutraPrev" title="前一天">‹</button>
         <div class="day-label" id="sutraDayLabel"></div>
@@ -222,13 +232,14 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <div class="sutra-stage"><span id="sutraDone">0/0</span><span id="sutraPct">0%</span></div>
         <div class="progress-bar"><div class="progress-fill" id="sutraBar"></div></div>
       </div>
+      <div class="sutra-steps" id="sutraSteps"></div>
       <div class="sutra-panel">
         <div class="sutra-title" id="sutraTitle"></div>
-        <div class="sutra-block" id="sutraBlock"></div>
+        <div id="sutraContent"></div>
         <div class="sutra-actions">
-          <button class="btn btn-primary" id="sutraSubmit">提交默写</button>
+          <button class="btn btn-primary" id="sutraSubmit">提交</button>
           <button class="btn btn-ghost" id="sutraAnswerToggle">看答案</button>
-          <button class="btn btn-ghost" id="sutraReset">重置当天</button>
+          <button class="btn btn-ghost" id="sutraReset">重置</button>
         </div>
         <div class="sutra-result" id="sutraResult"></div>
       </div>
@@ -345,32 +356,55 @@ const CONFIG={
   ],
   journalPrompts:['瞬间 1 · 今天有什么小确幸？','瞬间 2 · 什么让你有所触动？','瞬间 3 · 学到了 / 想通了什么？'],
   journalColors:['#7c9cff','#5fd0a8','#e879b6'],
-  sutraName:'《兰亭集序》',sutraAuthor:'王羲之',
+  sutraName:'《少年中国说》',sutraAuthor:'梁启超',
   sutraSegments:[
-    '永和九年，岁在癸丑，暮春之初，会于会稽山阴之兰亭，修禊事也。群贤毕至，少长咸集。',
-    '此地有崇山峻岭，茂林修竹，又有清流激湍，映带左右，引以为流觞曲水，列坐其次。',
-    '虽无丝竹管弦之盛，一觞一咏，亦足以畅叙幽情。是日也，天朗气清，惠风和畅。',
-    '仰观宇宙之大，俯察品类之盛，所以游目骋怀，足以极视听之娱，信可乐也。',
-    '夫人之相与，俯仰一世，或取诸怀抱，悟言一室之内；或因寄所托，放浪形骸之外。',
-    '虽趣舍万殊，静躁不同，当其欣于所遇，暂得于己，快然自足，不知老之将至。',
-    '及其所之既倦，情随事迁，感慨系之矣。向之所欣，俯仰之间，已为陈迹。',
-    '犹不能不以之兴怀，况修短随化，终期于尽。古人云：死生亦大矣，岂不痛哉！',
-    '每览昔人兴感之由，若合一契，未尝不临文嗟悼，不能喻之于怀。固知一死生为虚诞，齐彭殇为妄作。',
-    '后之视今，亦犹今之视昔，悲夫！故列叙时人，录其所述，虽世殊事异，所以兴怀，其致一也。后之览者，亦将有感于斯文。'
+    '故今日之责任，不在他人，而全在我少年。少年智则国智，少年富则国富；',
+    '少年强则国强，少年独立则国独立；少年自由则国自由；少年进步则国进步；',
+    '少年胜于欧洲，则国胜于欧洲；少年雄于地球，则国雄于地球。',
+    '红日初升，其道大光。河出伏流，一泻汪洋。',
+    '潜龙腾渊，鳞爪飞扬。乳虎啸谷，百兽震惶。',
+    '鹰隼试翼，风尘翕张。奇花初胎，矞矞皇皇。',
+    '干将发硎，有作其芒。天戴其苍，地履其黄。',
+    '纵有千古，横有八荒。前途似海，来日方长。',
+    '美哉我少年中国，与天不老！壮哉我中国少年，与国无疆！'
   ],
-  sutraDays:10,
-  sutraStart:'2026-08-25',
-  sutraBlanks:[
-    {seg:0,text:'永和九年，岁在癸丑，____，会于会稽山阴之兰亭，____。群贤毕至，____。',blanks:['暮春之初','修禊事也','少长咸集'],hints:{0:'暮',1:'修',2:'少'}},
-    {seg:1,text:'此地有____，茂林修竹，又有____，引以为流觞曲水，____。',blanks:['崇山峻岭','清流激湍','列坐其次'],hints:{0:'崇',1:'清',2:'列'}},
-    {seg:2,text:'虽无丝竹管弦之盛，____，亦足以畅叙幽情。是日也，____，____。',blanks:['一觞一咏','天朗气清','惠风和畅'],hints:{0:'一',1:'天',2:'惠'}},
-    {seg:3,text:'仰观宇宙之大，俯察品类之盛，____，足以极视听之娱，____。',blanks:['游目骋怀','信可乐也'],hints:{0:'游',1:'信'}},
-    {seg:4,text:'夫人之相与，俯仰一世，或取诸怀抱，____；或因寄所托，____。',blanks:['悟言一室之内','放浪形骸之外'],hints:{0:'悟',1:'放'}},
-    {seg:5,text:'虽趣舍万殊，静躁不同，____，暂得于己，快然自足，____。',blanks:['欣于所遇','不知老之将至'],hints:{0:'欣',1:'不'}},
-    {seg:6,text:'及其所之既倦，情随事迁，____。向之所欣，俯仰之间，____。',blanks:['感慨系之矣','已为陈迹'],hints:{0:'感',1:'已'}},
-    {seg:7,text:'犹不能不以之兴怀，况____，终期于尽。古人云：____，岂不痛哉！',blanks:['修短随化','死生亦大矣'],hints:{0:'修',1:'死'}},
-    {seg:8,text:'每览昔人兴感之由，____，未尝不临文嗟悼，不能喻之于怀。固知____为虚诞，____为妄作。',blanks:['若合一契','一死生','齐彭殇'],hints:{0:'若',1:'一',2:'齐'}},
-    {seg:9,text:'后之视今，亦犹今之视昔，____！故列叙____，录其所述，后之览者，____。',blanks:['悲夫','时人','亦将有感于斯文'],hints:{0:'悲',1:'时',2:'亦'}}
+  sutraDays:9,
+  sutraStart:'2026-09-08',
+  /* 每段：emoji锚点 + 拼音标注 + 易错提示 + 两级填空 */
+  sutraMeta:[
+    {emoji:'📢',pinyin:{'矞':'yù','硎':'xíng','隼':'sǔn','翕':'xī','惶':'huáng','澌':'sī','皴':'cūn','遝':'tà','脔':'luán','棰':'chuí','髀':'bì','瘠':'jí','濮':'pú','戛':'jiá','昊':'hào','苒':'rǎn','荀':'xún','耨':'nòu','郅':'zhì','赧':'nǎn','僦':'jiù','庑':'wǔ','矞':'yù','矞矞':'yù yù','皇皇':'huáng huáng','干将':'gān jiāng','发硎':'fā xíng','潜龙':'qián lóng','翕张':'xī zhāng','矞矞皇皇':'yù yù huáng huáng','一泻汪洋':'yī xiè wāng yáng','百兽震惶':'bǎi shòu zhèn huáng','鳞爪飞扬':'lín zhǎo fēi yáng','干将发硎':'gān jiāng fā xíng','天戴其苍':'tiān dài qí cāng','地履其黄':'dì lǚ qí huáng','美哉':'měi zāi','壮哉':'zhuàng zāi','无疆':'wú jiāng','八荒':'bā huāng','汪洋':'wāng yáng','伏流':'fú liú','初升':'chū shēng','大光':'dà guāng','腾渊':'téng yuān','啸谷':'xiào gǔ','试翼':'shì yì','初胎':'chū tāi','其芒':'qí máng','其苍':'qí cāng','其黄':'qí huáng','千古':'qiān gǔ','方长':'fāng cháng','不老':'bù lǎo','责任':'zé rèn','独立':'dú lì','自由':'zì yóu','进步':'jìn bù','欧洲':'ōu zhōu','地球':'dì qiú','智':'zhì','富':'fù','强':'qiáng','雄':'xióng','胜':'shèng'},tricky:'「责任」不要写成「重任」；「智」不要写成「知」'},
+    {emoji:'💪',tricky:'「独立」不要写成「独力」；排比句式「少年…则国…」要记住每句对应关系'},
+    {emoji:'🌍',tricky:'「雄于地球」不是「称雄地球」；「胜于欧洲」「雄于地球」结构对称'},
+    {emoji:'🌅',tricky:'「初升」不是「初生」；「伏流」指地下河，不要写成「伏流」以外的字；「一泻汪洋」的「泻」不要写成「泄」'},
+    {emoji:'🐉',tricky:'「震惶」不要写成「震惊」；「啸谷」不要写成「笑谷」；「鳞爪」的「爪」读 zhǎo'},
+    {emoji:'🦅',tricky:'「隼」读 sǔn，不要写成「集」；「翕张」读 xī zhāng，不要写成「翕彰」；「矞矞」读 yù yù'},
+    {emoji:'⚔️',tricky:'「干将」是宝剑名，读 gān jiāng；「硎」读 xíng，是磨刀石；「戴」不要写成「带」'},
+    {emoji:'🌊',tricky:'「八荒」不是「八方」；「方长」不是「很长」；「纵…横…」对仗要记住'},
+    {emoji:'🇨🇳',tricky:'「美哉」「壮哉」的「哉」不要写成「栽」；「无疆」不要写成「无边」；顺序：「美哉我少年中国」在前，「壮哉我中国少年」在后'}
+  ],
+  /* 一级填空（通读后，挖40%关键词） */
+  sutraEasy:[
+    {seg:0,text:'故今日之____，不在他人，而全在我____。少年____则国智，少年富则国____；',blanks:['责任','少年','智','富'],hints:{0:'责',1:'少',2:'智',3:'富'}},
+    {seg:1,text:'少年强则国____，少年____则国独立；少年自由则国____；少年____则国进步；',blanks:['强','独立','自由','进步'],hints:{0:'强',1:'独',2:'自',3:'进'}},
+    {seg:2,text:'少年胜于____，则国胜于欧洲；少年雄于____，则国雄于地球。',blanks:['欧洲','地球'],hints:{0:'欧',1:'地'}},
+    {seg:3,text:'红日____，其道大光。河出____，一泻汪洋。',blanks:['初升','伏流'],hints:{0:'初',1:'伏'}},
+    {seg:4,text:'潜龙____，鳞爪飞扬。乳虎____，百兽震惶。',blanks:['腾渊','啸谷'],hints:{0:'腾',1:'啸'}},
+    {seg:5,text:'鹰隼____，风尘翕张。奇花____，矞矞皇皇。',blanks:['试翼','初胎'],hints:{0:'试',1:'初'}},
+    {seg:6,text:'干将____，有作其芒。天戴____，地履其黄。',blanks:['发硎','其苍'],hints:{0:'发',1:'其'}},
+    {seg:7,text:'纵有____，横有八荒。前途____，来日方长。',blanks:['千古','似海'],hints:{0:'千',1:'似'}},
+    {seg:8,text:'美哉我少年中国，与天____！壮哉我中国少年，与国____！',blanks:['不老','无疆'],hints:{0:'不',1:'无'}}
+  ],
+  /* 二级填空（默写级，挖70%关键词） */
+  sutraHard:[
+    {seg:0,text:'故今日之____，不在____，而全在我____。少年____则国____，少年____则国____；',blanks:['责任','他人','少年','智','智','富','富'],hints:{0:'责',1:'他',2:'少',3:'智',4:'智',5:'富',6:'富'}},
+    {seg:1,text:'少年____则国____，少年____则国____；少年____则国____；少年____则国____；',blanks:['强','强','独立','独立','自由','自由','进步','进步'],hints:{0:'强',1:'强',2:'独',3:'独',4:'自',5:'自',6:'进',7:'进'}},
+    {seg:2,text:'少年____于____，则国胜于____；少年____于____，则国雄于____。',blanks:['胜','欧洲','欧洲','雄','地球','地球'],hints:{0:'胜',1:'欧',2:'欧',3:'雄',4:'地',5:'地'}},
+    {seg:3,text:'红日____，其道____。河出____，一泻____。',blanks:['初升','大光','伏流','汪洋'],hints:{0:'初',1:'大',2:'伏',3:'汪'}},
+    {seg:4,text:'____腾渊，____飞扬。____啸谷，____震惶。',blanks:['潜龙','鳞爪','乳虎','百兽'],hints:{0:'潜',1:'鳞',2:'乳',3:'百'}},
+    {seg:5,text:'____试翼，风尘____。____初胎，____皇皇。',blanks:['鹰隼','翕张','奇花','矞矞'],hints:{0:'鹰',1:'翕',2:'奇',3:'矞'}},
+    {seg:6,text:'____发硎，有作____。天戴____，地履____。',blanks:['干将','其芒','其苍','其黄'],hints:{0:'干',1:'其',2:'其',3:'其'}},
+    {seg:7,text:'纵有____，横有____。前途____，来日____。',blanks:['千古','八荒','似海','方长'],hints:{0:'千',1:'八',2:'似',3:'方'}},
+    {seg:8,text:'____我少年中国，与天____！____我中国少年，与国____！',blanks:['美哉','不老','壮哉','无疆'],hints:{0:'美',1:'不',2:'壮',3:'无'}}
   ],
   mindPhrases:['深呼吸，你在此刻 🌿','此刻就是唯一的存在 🫧','慢下来，听见风的声音 🍃','你的呼吸，就是回家的路 🌿','允许自己只是坐着 ☕','不追过去，不盼未来，只在当下 ✨','身安心闲，此即归处 🌼','一次呼吸，一次新生 🫧'],
   weekMetric:'habits',chartColor:'#7c9cff',
@@ -390,7 +424,7 @@ const parseDate=s=>{const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);};
 const addDays=(s,n)=>{const d=parseDate(s);d.setDate(d.getDate()+n);return fmtDate(d);};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,updatedAt:d+'T00:00:00'};}
+function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,sutraStep:0,updatedAt:d+'T00:00:00'};}
 function loadData(){
   let main=null,bak=null;
   try{main=JSON.parse(localStorage.getItem(LS_MAIN));}catch(e){}
@@ -401,6 +435,7 @@ function loadData(){
   if(!data)return null;
   ['habits','habitsLog','journalLog','calmLog','sutraLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
   if(data.sutraProgress===undefined)data.sutraProgress=0;
+  if(data.sutraStep===undefined)data.sutraStep=0;
   if(data.metrics!==undefined)delete data.metrics;
   if(data.metricsLog!==undefined)delete data.metricsLog;
   if(!data.updatedAt)data.updatedAt=new Date().toISOString();
@@ -616,17 +651,14 @@ function renderJournal(){
     });
   });
 }
-/* ================== 默写 ================== */
-function dayNum(s){return Math.floor((parseDate(s)-new Date(2000,0,1))/86400000);}
-/* 进度基于 sutraProgress（提交后才推进），不再按日期自动跳 */
+/* ================== 背诵 ================== */
+/* 三步背诵法：0=通读 1=填空(易) 2=填空(难) 3=完成 */
 function sutraCurrentIdx(){return Math.min(state.sutraProgress||0,CONFIG.sutraDays-1);}
-function sutraDayIndex(s){
-  const cur=s||sutraCursor||todayStr();
-  if(cur===todayStr())return sutraCurrentIdx();
-  /* 历史日期：找那天对应的进度 */
-  const rec=state.sutraLog[cur];
-  if(rec&&rec.segIdx!=null)return rec.segIdx;
-  return Math.min(state.sutraProgress||0,CONFIG.sutraDays-1);
+function sutraStepKey(){return state.sutraStep||0;}
+function sutraGetBlanks(idx){
+  /* step 1 = easy, step 2 = hard */
+  const arr = sutraStepKey()===1 ? CONFIG.sutraEasy : CONFIG.sutraHard;
+  return arr.find(b=>b.seg===idx) || null;
 }
 function sutraDateLabel(){
   const cur=sutraCursor||todayKey;
@@ -635,93 +667,163 @@ function sutraDateLabel(){
   const m=parseDate(cur).getMonth()+1, d=parseDate(cur).getDate(), w=weekdayCN[parseDate(cur).getDay()];
   return isToday?('今天 '+m+'/'+d+' 周'+w):(m+'/'+d+' 周'+w);
 }
+/* 拼音标注：给通读文本加 ruby */
+function sutraPinyinHtml(text){
+  const meta=CONFIG.sutraMeta;
+  /* 简单版本：不加ruby，只在易错提示里展示拼音。通读就展示原文 */
+  return text;
+}
+function renderSutraSteps(idx){
+  const host=document.getElementById('sutraSteps');
+  if(!host)return;
+  const step=sutraStepKey();
+  const labels=['通读','填空','默写'];
+  let h='';
+  for(let i=0;i<3;i++){
+    const cls = i<step ? 'done' : (i===step ? 'active' : '');
+    h+='<div class="sutra-step '+cls+'" data-step="'+i+'"><span class="step-num">'+(i<step?'✓':(i+1))+'</span>'+labels[i]+'</div>';
+  }
+  host.innerHTML=h;
+  host.querySelectorAll('.sutra-step').forEach(el=>{
+    el.onclick=()=>{
+      const s=+el.dataset.step;
+      if(s<step && (state.sutraProgress||0)===idx){
+        state.sutraStep=s;saveData(true);renderSutra();
+      }
+    };
+  });
+}
 function renderSutra(){
   const cur=sutraCursor||todayKey;
   const today=todayStr();
   const isToday=cur===today;
   const total=CONFIG.sutraDays;
   const progress=state.sutraProgress||0;
-  /* 全部完成：显示结课庆祝 */
+  const step=sutraStepKey();
+  /* 日期标签 & 进度条 */
+  document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
+  document.getElementById('sutraPrev').disabled=false;
+  document.getElementById('sutraNext').style.visibility=isToday?'hidden':'visible';
+  /* 全部完成：结课庆祝 */
   if(progress>=total&&isToday){
-    document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
-    document.getElementById('sutraPrev').disabled=false;
-    document.getElementById('sutraNext').style.visibility='hidden';
     document.getElementById('sutraDone').textContent=total+'/'+total;
     document.getElementById('sutraPct').textContent='100%';
     document.getElementById('sutraBar').style.width='100%';
     document.getElementById('sutraTitle').textContent='🎉 全部完成！'+CONFIG.sutraName+' '+CONFIG.sutraAuthor;
-    const blk=document.getElementById('sutraBlock');
-    blk.innerHTML='<div class="sutra-complete">'+
+    document.getElementById('sutraSteps').innerHTML='';
+    const c=document.getElementById('sutraContent');
+    c.innerHTML='<div class="sutra-complete">'+
       '<div class="complete-icon">🏆</div>'+
-      '<h3>恭喜！'+CONFIG.sutraName+' 全部 10 段默写完成</h3>'+
+      '<h3>恭喜！'+CONFIG.sutraName+' 全部 '+total+' 段背诵完成</h3>'+
       '<p>你已逐段背完整篇 '+CONFIG.sutraName+'，太了不起了！<br>可翻看历史记录复习，或重置后重新挑战。</p>'+
-      '<button class="reset-sutra-btn" id="sutraRestartBtn">重新开始</button>'+
-      '</div>';
+      '<button class="reset-sutra-btn" id="sutraRestartBtn">重新开始</button></div>';
     document.getElementById('sutraSubmit').disabled=true;
     document.getElementById('sutraReset').disabled=true;
     document.getElementById('sutraResult').classList.remove('show');
     document.getElementById('sutraAnswerBox').classList.remove('open');
-    var restartBtn=document.getElementById('sutraRestartBtn');
-    if(restartBtn)restartBtn.onclick=function(){
-      if(confirm('确定重新开始全部默写吗？这将清空所有默写记录。')){
-        state.sutraProgress=0;state.sutraLog={};saveData(true);renderSutra();toast('已重新开始');
-      }
-    };
+    var rb=document.getElementById('sutraRestartBtn');
+    if(rb)rb.onclick=function(){if(confirm('确定重新开始全部背诵吗？这将清空所有背诵记录。')){state.sutraProgress=0;state.sutraStep=0;state.sutraLog={};saveData(true);renderSutra();toast('已重新开始');}};
     return;
   }
   const idx=isToday?sutraCurrentIdx():sutraDayIndex(cur);
-  document.getElementById('sutraDayLabel').textContent=sutraDateLabel();
-  document.getElementById('sutraPrev').disabled=false;
-  document.getElementById('sutraNext').style.visibility=isToday?'hidden':'visible';
   document.getElementById('sutraDone').textContent=(idx+1)+'/'+total;
   document.getElementById('sutraPct').textContent=Math.round((idx+1)/total*100)+'%';
   document.getElementById('sutraBar').style.width=((idx+1)/total*100)+'%';
   document.getElementById('sutraTitle').textContent='第 '+(idx+1)+' 段 / 共 '+total+' 段 · '+CONFIG.sutraName+' '+CONFIG.sutraAuthor;
-  const seg=CONFIG.sutraSegments[idx];
-  const segTpl=CONFIG.sutraBlanks.find(b=>b.seg===idx);
-  const blk=document.getElementById('sutraBlock');
-  blk.innerHTML='';
-  let filled=segTpl?segTpl.text:seg;
+  renderSutraSteps(idx);
+  const meta=CONFIG.sutraMeta[idx];
+  const content=document.getElementById('sutraContent');
+  if(!isToday){
+    /* 历史日期：显示当天记录 */
+    const rec=state.sutraLog[cur];
+    const seg=CONFIG.sutraSegments[idx];
+    content.innerHTML='<div class="sutra-read">'+esc(seg)+'</div>';
+    document.getElementById('sutraSubmit').disabled=true;
+    document.getElementById('sutraReset').disabled=true;
+    document.getElementById('sutraResult').classList.remove('show');
+    return;
+  }
+  /* === 步骤0：通读 === */
+  if(step===0){
+    let h='';
+    if(meta&&meta.emoji) h+='<div class="sutra-anchor">'+meta.emoji+'</div>';
+    h+='<div class="sutra-read">'+esc(CONFIG.sutraSegments[idx])+'</div>';
+    if(meta&&meta.tricky) h+='<div class="sutra-tricky">⚠ '+esc(meta.tricky)+'</div>';
+    content.innerHTML=h;
+    document.getElementById('sutraSubmit').disabled=false;
+    document.getElementById('sutraSubmit').textContent='我读熟了 →';
+    document.getElementById('sutraReset').disabled=true;
+    document.getElementById('sutraResult').classList.remove('show');
+    return;
+  }
+  /* === 步骤1/2：填空 === */
+  const tpl=sutraGetBlanks(idx);
+  if(!tpl){
+    content.innerHTML='<div class="sutra-read">'+esc(CONFIG.sutraSegments[idx])+'</div>';
+    return;
+  }
+  let filled=tpl.text;
   const inputs=[];
   let bi=0;
-  while(filled.includes('____')&&segTpl&&bi<segTpl.blanks.length){
-    const ans=segTpl.blanks[bi];
+  while(filled.includes('____')&&bi<tpl.blanks.length){
+    const ans=tpl.blanks[bi];
     const n=ans.length;
-    const hint=segTpl.hints[bi]||'';
+    const hint=tpl.hints[bi]||'';
     filled=filled.replace('____','@@'+bi+'@@');
     inputs.push({idx:bi,n,hint});
     bi++;
   }
   const html=filled.replace(/@@(\d+)@@/g,(m,id)=>{
     const b=inputs[+id];
-    return '<span class="blank-group"><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'" autocomplete="off" autocorrect="off" autocapitalize="off"'+(isToday?'':' disabled')+'><sup>'+b.n+'字</sup></span>';
+    return '<span class="blank-group"><input class="blank" data-id="'+id+'" placeholder="'+esc(b.hint)+'…" maxlength="'+b.n+'" size="'+b.n+'" autocomplete="off" autocorrect="off" autocapitalize="off"><sup>'+b.n+'字</sup></span>';
   });
-  blk.innerHTML=html;
-  /* 历史日期：禁用提交/重置，仅可看答案 */
-  document.getElementById('sutraSubmit').disabled=!isToday;
-  document.getElementById('sutraReset').disabled=!isToday;
-  /* 还原记录 */
+  let h='';
+  if(meta&&meta.emoji) h+='<div class="sutra-anchor">'+meta.emoji+'</div>';
+  h+='<div class="sutra-block">'+html+'</div>';
+  if(step===1&&meta&&meta.tricky) h+='<div class="sutra-tricky">⚠ '+esc(meta.tricky)+'</div>';
+  content.innerHTML=h;
+  document.getElementById('sutraSubmit').disabled=false;
+  document.getElementById('sutraSubmit').textContent=step===1?'提交填空 →':'提交默写';
+  document.getElementById('sutraReset').disabled=false;
+  /* 还原历史输入 */
   const rec=state.sutraLog[cur];
-  blk.querySelectorAll('.blank').forEach(inp=>{
+  content.querySelectorAll('.blank').forEach(inp=>{
     const id=+inp.dataset.id;
     if(rec&&rec.values&&rec.values[id]!=null){
       inp.value=rec.values[id];
-      if(rec.done){inp.classList.add(rec.okay&&rec.okay[id]?'ok':'err');}
+      if(rec.done&&rec.step===step){inp.classList.add(rec.okay&&rec.okay[id]?'ok':'err');}
     }
   });
 }
+function sutraDayIndex(s){
+  const cur=s||sutraCursor||todayStr();
+  if(cur===todayStr())return sutraCurrentIdx();
+  const rec=state.sutraLog[cur];
+  if(rec&&rec.segIdx!=null)return rec.segIdx;
+  return Math.min(state.sutraProgress||0,CONFIG.sutraDays-1);
+}
 function submitSutra(){
   const cur=sutraCursor||todayKey;
-  const blk=document.getElementById('sutraBlock');
   const idx=sutraCurrentIdx();
-  const segTpl=CONFIG.sutraBlanks.find(b=>b.seg===idx);
-  const inpArr=[].slice.call(blk.querySelectorAll('.blank'));
+  const step=sutraStepKey();
+  const today=todayStr();
+  if(cur!==today)return;
+  /* step 0 → 进入 step 1 */
+  if(step===0){
+    state.sutraStep=1;
+    saveData(true);renderSutra();
+    return;
+  }
+  /* step 1/2 → 判分 */
+  const content=document.getElementById('sutraContent');
+  const tpl=sutraGetBlanks(idx);
+  const inpArr=[].slice.call(content.querySelectorAll('.blank'));
   if(!inpArr.length)return;
   let correct=0;
   const values={},okay={};
   inpArr.forEach((inp,di)=>{
     const v=inp.value.trim();
-    const ans=segTpl&&segTpl.blanks[di]?segTpl.blanks[di]:'';
+    const ans=tpl&&tpl.blanks[di]?tpl.blanks[di]:'';
     const good=v===ans;
     if(good)correct++;
     inp.classList.remove('ok','err');
@@ -733,24 +835,30 @@ function submitSutra(){
   const rec=state.sutraLog[cur];
   rec.tries=(rec.tries||0)+1;
   rec.done=true;rec.values=values;rec.okay=okay;rec.allT=correct===all;
-  rec.segIdx=idx;
-  rec.date=cur;
+  rec.segIdx=idx;rec.date=cur;rec.step=step;
   const res=document.getElementById('sutraResult');
   res.textContent='正确 '+correct+'/'+all+' · 第 '+rec.tries+' 次尝试';
   res.style.color=correct===all?'var(--secondary)':'var(--danger)';
   res.classList.add('show');
-  /* 全对才推进进度 */
-  if(correct===all&&(state.sutraProgress||0)===idx){
-    state.sutraProgress=idx+1;
-  }
-  saveData(true);
-  /* 全对后自动推进到下一段（延迟 1.2 秒让用户看到判分结果） */
-  if(correct===all&&state.sutraProgress>idx){
-    setTimeout(()=>{renderSutra();},1200);
-  }
-  /* 如果刚完成最后一段，重新渲染显示庆祝 */
-  if(state.sutraProgress>=CONFIG.sutraDays){
-    setTimeout(()=>{renderSutra();},1200);
+  if(correct===all){
+    if(step===1){
+      /* 填空全对 → 进入默写(step 2) */
+      state.sutraStep=2;
+      saveData(true);
+      setTimeout(()=>{renderSutra();toast('填空全对！进入默写挑战');},1000);
+    }else if(step===2){
+      /* 默写全对 → 推进进度到下一段 */
+      if((state.sutraProgress||0)===idx) state.sutraProgress=idx+1;
+      state.sutraStep=0;
+      saveData(true);
+      if(state.sutraProgress>=CONFIG.sutraDays){
+        setTimeout(()=>{renderSutra();},1200);
+      }else{
+        setTimeout(()=>{renderSutra();toast('默写全对！进入下一段');},1200);
+      }
+    }
+  }else{
+    saveData(true);
   }
 }
 function toggleAnswer(){
@@ -766,8 +874,19 @@ function toggleAnswer(){
 }
 function resetSutra(){
   const cur=sutraCursor||todayKey;
-  if(!confirm('确定重置 '+cur+' 的默写记录吗？'))return;
-  delete state.sutraLog[cur];
+  const step=sutraStepKey();
+  if(!confirm(step===0?'确定重置当前段进度吗？':'确定重置当前填空吗？'))return;
+  if(step===0){
+    /* 回退到上一段开头 */
+    if((state.sutraProgress||0)>0){
+      state.sutraProgress--;
+      state.sutraStep=0;
+    }
+  }else{
+    /* 重置当前步骤的填空 */
+    delete state.sutraLog[cur];
+    state.sutraStep=0;
+  }
   saveData(true);renderSutra();toast('已重置');
 }
 
