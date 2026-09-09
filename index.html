@@ -357,6 +357,7 @@ const CONFIG={
   journalPrompts:['瞬间 1 · 今天有什么小确幸？','瞬间 2 · 什么让你有所触动？','瞬间 3 · 学到了 / 想通了什么？'],
   journalColors:['#7c9cff','#5fd0a8','#e879b6'],
   sutraName:'《少年中国说》',sutraAuthor:'梁启超',
+  sutraVersion:2, /* 背诵内容版本：内容或交互改版时 +1，自动清空旧背诵进度 */
   sutraSegments:[
     '故今日之责任，不在他人，而全在我少年。少年智则国智，少年富则国富；',
     '少年强则国强，少年独立则国独立；少年自由则国自由；少年进步则国进步；',
@@ -424,7 +425,7 @@ const parseDate=s=>{const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);};
 const addDays=(s,n)=>{const d=parseDate(s);d.setDate(d.getDate()+n);return fmtDate(d);};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,sutraStep:0,updatedAt:d+'T00:00:00'};}
+function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,sutraStep:0,sutraVersion:CONFIG.sutraVersion,updatedAt:d+'T00:00:00'};}
 function loadData(){
   let main=null,bak=null;
   try{main=JSON.parse(localStorage.getItem(LS_MAIN));}catch(e){}
@@ -436,6 +437,13 @@ function loadData(){
   ['habits','habitsLog','journalLog','calmLog','sutraLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
   if(data.sutraProgress===undefined)data.sutraProgress=0;
   if(data.sutraStep===undefined)data.sutraStep=0;
+  /* 背诵内容版本比对：版本不一致则清空背诵进度与记录，从头开始 */
+  if(data.sutraVersion!==CONFIG.sutraVersion){
+    data.sutraVersion=CONFIG.sutraVersion;
+    data.sutraProgress=0;
+    data.sutraStep=0;
+    data.sutraLog={};
+  }
   if(data.metrics!==undefined)delete data.metrics;
   if(data.metricsLog!==undefined)delete data.metricsLog;
   if(!data.updatedAt)data.updatedAt=new Date().toISOString();
