@@ -188,6 +188,53 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
 .wk-tip.warn{border-left-color:var(--warn)}
 .wk-tip.ok{border-left-color:var(--secondary)}
 .wk-tip.today{border-left-color:var(--primary)}
+/* 睡眠记录 */
+:root{color-scheme:dark}
+.sleep-summary{margin-top:12px;background:var(--card-inner);border:1px solid var(--border);border-radius:12px;padding:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sleep-summary .sl-moon{font-size:30px;line-height:1}
+.sleep-summary .sl-main{flex:1;min-width:140px}
+.sleep-summary .sl-dur{font-size:22px;font-weight:700;letter-spacing:.5px}
+.sleep-summary .sl-sub{font-size:12px;color:var(--text2);margin-top:3px;line-height:1.6}
+.sl-badge{font-size:12px;padding:4px 12px;border-radius:99px;border:1px solid;white-space:nowrap;font-weight:600}
+.sl-badge.ok{color:var(--secondary);border-color:var(--secondary);background:rgba(95,208,168,.1)}
+.sl-badge.mid{color:var(--warn);border-color:var(--warn);background:rgba(232,179,57,.1)}
+.sl-badge.bad{color:var(--danger);border-color:var(--danger);background:rgba(239,107,107,.1)}
+.sleep-inputs{display:flex;gap:10px;margin-top:12px;align-items:flex-end}
+.sleep-field{flex:1}
+.sleep-field label{font-size:12px;color:var(--text2);display:block;margin-bottom:6px}
+.sleep-field input[type=time]{width:100%;height:48px;background:var(--card-inner);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:18px;padding:0 8px;outline:none;transition:border-color .2s;font-variant-numeric:tabular-nums}
+.sleep-field input[type=time]:focus{border-color:var(--primary)}
+.sleep-vs{font-size:18px;color:var(--text3);padding-bottom:11px;flex:none}
+.sleep-actions{display:flex;gap:8px;margin-top:12px}
+.sleep-actions .btn{flex:1.6;height:46px;font-size:15px;border-radius:12px}
+.sleep-actions .btn-ghost{flex:1}
+.sleep-result{margin-top:10px;font-size:13px;color:var(--text2);display:none;line-height:1.7}
+.sleep-result.show{display:block}
+.sleep-chart-wrap{margin-top:16px}
+.sleep-chart-title{font-size:12px;color:var(--text2);margin-bottom:10px;display:flex;justify-content:space-between;align-items:center}
+.sleep-legend{display:flex;gap:10px;font-size:10px;color:var(--text3)}
+.sleep-legend i{display:inline-block;width:8px;height:8px;border-radius:2px;margin-right:3px;vertical-align:middle}
+.sleep-chart{position:relative}
+.sleep-bars{display:flex;gap:3px;align-items:flex-end;height:130px;position:relative}
+.sl-col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%;min-width:0;position:relative}
+.sl-bar{width:100%;border-radius:4px 4px 2px 2px;position:relative;transition:height .4s ease;min-height:2px}
+.sl-bar.good{background:linear-gradient(180deg,var(--secondary),rgba(95,208,168,.55))}
+.sl-bar.mid{background:linear-gradient(180deg,var(--warn),rgba(232,179,57,.5))}
+.sl-bar.bad{background:linear-gradient(180deg,var(--danger),rgba(239,107,107,.5))}
+.sl-bar.none{background:rgba(154,163,178,.14);min-height:2px}
+.sl-val{position:absolute;top:-15px;left:0;right:0;text-align:center;font-size:8.5px;color:var(--text2);white-space:nowrap;font-variant-numeric:tabular-nums}
+.sl-goal{position:absolute;left:0;right:0;border-top:1px dashed rgba(95,208,168,.65);z-index:2;pointer-events:none}
+.sl-goal span{position:absolute;right:0;top:-15px;font-size:9px;color:var(--secondary);background:var(--card);padding:0 3px;border-radius:3px}
+.sl-dates{display:flex;gap:3px;margin-top:6px}
+.sl-dates span{flex:1;text-align:center;font-size:9px;color:var(--text3);font-variant-numeric:tabular-nums}
+.sl-dates span.today{color:var(--primary);font-weight:700}
+.sl-dates span.full{color:var(--text2)}
+.sleep-stats{margin-top:12px;display:flex;gap:8px}
+.sl-stat{flex:1;background:var(--card-inner);border:1px solid var(--border);border-radius:12px;padding:10px 6px;text-align:center}
+.sl-stat .sl-num{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+.sl-stat .sl-num.up{color:var(--secondary)}
+.sl-stat .sl-num.down{color:var(--danger)}
+.sl-stat .sl-label{font-size:10px;color:var(--text3);margin-top:3px}
 </style>
 </head>
 <body>
@@ -219,6 +266,43 @@ pre.raw{background:var(--card-inner);border:1px solid var(--border);border-radiu
         <button class="icon-btn" id="habitNext" title="后一天">›</button>
       </div>
       <ul class="habit-list" id="habitList"></ul>
+    </div>
+
+    <div class="card">
+      <h2>睡眠记录 <span class="sub" id="sleepSub">目标：每天睡满 7 小时</span></h2>
+      <div class="journal-nav">
+        <button class="icon-btn" id="sleepPrev" title="前一天">‹</button>
+        <div class="day-label" id="sleepDayLabel"></div>
+        <button class="icon-btn" id="sleepNext" title="后一天">›</button>
+      </div>
+      <div class="sleep-summary" id="sleepSummary"></div>
+      <div class="sleep-inputs">
+        <div class="sleep-field">
+          <label for="sleepBed">入睡时间（昨晚）</label>
+          <input type="time" id="sleepBed">
+        </div>
+        <div class="sleep-vs">🌙→☀️</div>
+        <div class="sleep-field">
+          <label for="sleepWake">起床时间（今早）</label>
+          <input type="time" id="sleepWake">
+        </div>
+      </div>
+      <div class="sleep-actions">
+        <button class="btn btn-primary" id="sleepSave">保存</button>
+        <button class="btn btn-ghost" id="sleepClear">删除</button>
+      </div>
+      <div class="sleep-result" id="sleepResult"></div>
+      <div class="sleep-chart-wrap" id="sleepChartWrap">
+        <div class="sleep-chart-title">
+          <span>近 14 天睡眠时长</span>
+          <span class="sleep-legend"><span><i style="background:var(--secondary)"></i>≥7h</span><span><i style="background:var(--warn)"></i>6-7h</span><span><i style="background:var(--danger)"></i>&lt;6h</span></span>
+        </div>
+        <div class="sleep-chart">
+          <div class="sleep-bars" id="sleepBars"></div>
+          <div class="sl-dates" id="sleepDates"></div>
+        </div>
+      </div>
+      <div class="sleep-stats" id="sleepStats"></div>
     </div>
 
     <div class="card">
@@ -433,7 +517,7 @@ sutraHard:[
 };
 /* ================== 数据层 ================== */
 const LS_MAIN='workbench_data_v1', LS_BAK='workbench_data_v1_bak', LS_SYNC='workbench_sync_v1';
-let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null, habitCursor=null;
+let state=null, todayKey='', editingHabit=null, journalCursor=null, sutraCursor=null, habitCursor=null, sleepCursor=null;
 let syncState='idle', syncTimer=null, cloudTimer=null;
 let journalDebounce={};
 const pad2=n=>String(n).padStart(2,'0');
@@ -445,7 +529,7 @@ const parseDate=s=>{const p=s.split('-');return new Date(+p[0],+p[1]-1,+p[2]);};
 const addDays=(s,n)=>{const d=parseDate(s);d.setDate(d.getDate()+n);return fmtDate(d);};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,8);
-function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sutraProgress:0,sutraStep:0,sutraVersion:CONFIG.sutraVersion,updatedAt:d+'T00:00:00'};}
+function defaultState(){const d=todayStr();return {habits:[],habitsLog:{},journalLog:{},calmLog:{},sutraLog:{},sleepLog:{},sutraProgress:0,sutraStep:0,sutraVersion:CONFIG.sutraVersion,updatedAt:d+'T00:00:00'};}
 function loadData(){
   let main=null,bak=null;
   try{main=JSON.parse(localStorage.getItem(LS_MAIN));}catch(e){}
@@ -454,7 +538,8 @@ function loadData(){
   if(main&&main.updatedAt){data=main;}
   else if(bak&&bak.updatedAt){data=bak;try{localStorage.setItem(LS_MAIN,JSON.stringify(bak));}catch(e){}}
   if(!data)return null;
-  ['habits','habitsLog','journalLog','calmLog','sutraLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
+  ['habits','habitsLog','journalLog','calmLog','sutraLog','sleepLog'].forEach(k=>{if(data[k]===undefined||data[k]===null)data[k]=(k==='habits')?[]:{};});
+  if(typeof data.sleepLog!=='object'||data.sleepLog===null)data.sleepLog={};
   if(data.sutraProgress===undefined)data.sutraProgress=0;
   if(data.sutraStep===undefined)data.sutraStep=0;
   /* 背诵内容版本比对：版本不一致则清空背诵进度与记录，从头开始 */
@@ -474,6 +559,7 @@ function seedDefaults(data){
     const hasLog=Object.keys(data.habitsLog||{}).some(k=>{const o=data.habitsLog[k];return o&&typeof o==='object'&&Object.keys(o).length>0;});
     if(!hasLog){data.habits=CONFIG.habits.map(h=>Object.assign({id:uid()},h));}
   }
+  if(!data.sleepLog||typeof data.sleepLog!=='object')data.sleepLog={};
   return data;
 }
 function loadDataSafe(){
@@ -918,6 +1004,150 @@ function resetSutra(){
   saveData(true);renderSutra();toast('已重置');
 }
 
+/* ================== 睡眠记录 ================== */
+const SLEEP_GOAL=420; /* 目标 7 小时（分钟） */
+function sleepCur(){return sleepCursor||todayKey;}
+function hm2min(t){if(!t||typeof t!=='string')return null;const p=t.split(':');if(p.length<2||isNaN(+p[0])||isNaN(+p[1]))return null;return (+p[0])*60+(+p[1])%60;}
+function sleepDur(bed,wake){ /* 返回分钟；跨午夜自动处理 */
+  const b=hm2min(bed),w=hm2min(wake);
+  if(b===null||w===null)return null;
+  return w>b ? w-b : w+1440-b;
+}
+function fmtDurShort(min){if(min===null)return '—';const h=Math.floor(min/60),m=Math.round(min%60);return m?h+'h'+String(m).padStart(2,'0')+'m':h+'h';}
+function fmtDurCN(min){if(min===null)return '—';const h=Math.floor(min/60),m=Math.round(min%60);return ((h?h+' 小时 ':'')+(m?m+' 分钟':'')).trim()||'0 分钟';}
+function sleepGoalBed(wake){ /* 目标入睡 = 起床 - 7h */
+  const w=hm2min(wake);if(w===null)return '23:30';
+  let t=w-SLEEP_GOAL;if(t<0)t+=1440;
+  return String(Math.floor(t/60)).padStart(2,'0')+':'+String(t%60).padStart(2,'0');
+}
+function sleepStreakInfo(){ /* 连续达标天数：今天未记录则从昨天起算 */
+  if(!state.sleepLog)return {days:0,fromYesterday:false};
+  let days=0,k=todayKey;
+  const rec=(d)=>{const r=state.sleepLog[d];if(!r)return null;const du=sleepDur(r.bed,r.wake);return du===null?null:du;};
+  const todayRec=rec(todayKey);
+  if(todayRec!==null){ if(todayRec>=SLEEP_GOAL){days=1;} k=addDays(todayKey,-1); }
+  else k=addDays(todayKey,-1);
+  while(true){
+    const v=rec(k);
+    if(v===null)break;
+    if(v>=SLEEP_GOAL)days++;else break;
+    k=addDays(k,-1);
+    if(days>365)break;
+  }
+  return {days,fromYesterday:todayRec===null};
+}
+function sleepAvg(from,n){ /* 从 from 往前 n 天的平均时长（仅有记录的天） */
+  if(!state.sleepLog)return null;
+  let sum=0,cnt=0,k=from;
+  for(let i=0;i<n;i++){
+    const r=state.sleepLog[k];
+    if(r){const d=sleepDur(r.bed,r.wake);if(d!==null){sum+=d;cnt++;}}
+    k=addDays(k,-1);
+  }
+  return cnt?Math.round(sum/cnt):null;
+}
+function renderSleep(){
+  const cur=sleepCur();
+  const isToday=cur===todayStr();
+  /* 日期标签 */
+  const m=parseDate(cur).getMonth()+1,d=parseDate(cur).getDate(),w=weekdayCN[parseDate(cur).getDay()];
+  document.getElementById('sleepDayLabel').textContent=isToday?('今天 '+m+'/'+d+' 周'+w+' · 昨晚睡眠'):(m+'/'+d+' 周'+w);
+  const rec=state.sleepLog?state.sleepLog[cur]:null;
+  const bedEl=document.getElementById('sleepBed'),wakeEl=document.getElementById('sleepWake');
+  const res=document.getElementById('sleepResult');
+  /* 回填输入框：无记录时起床默认 06:30 或沿用上一天 */
+  let defWake='06:30',prev=addDays(cur,-1);
+  while(prev>=addDays(cur,-30)&&prev!==''){if(state.sleepLog&&state.sleepLog[prev]&&state.sleepLog[prev].wake){defWake=state.sleepLog[prev].wake;break;}prev=addDays(prev,-1);}
+  bedEl.value=rec?rec.bed:'';
+  wakeEl.value=rec?rec.wake:defWake;
+  bedEl.disabled=false;wakeEl.disabled=false;
+  document.getElementById('sleepSave').disabled=false;
+  document.getElementById('sleepClear').disabled=!rec;
+  /* === 摘要卡片 === */
+  const dur=rec?sleepDur(rec.bed,rec.wake):null;
+  const summary=document.getElementById('sleepSummary');
+  const goalBed=sleepGoalBed(rec&&rec.wake?rec.wake:wakeEl.value||'06:30');
+  if(dur!==null){
+    const cls=dur>=SLEEP_GOAL?'ok':(dur>=360?'mid':'bad');
+    const badge=dur>=SLEEP_GOAL?'✓ 达标 ≥7h':(dur>=360?'接近目标':'不足');
+    const diff=dur>=SLEEP_GOAL?null:SLEEP_GOAL-dur;
+    const diffTxt=diff?(Math.floor(diff/60)?'还差 '+Math.floor(diff/60)+' 小时'+(diff%60?' ':''):'还差 ') : '';
+    summary.innerHTML='<div class="sl-moon">'+(dur>=SLEEP_GOAL?'😴':'🌙')+'</div>'+
+      '<div class="sl-main"><div class="sl-dur" style="color:'+(dur>=SLEEP_GOAL?'var(--secondary)':(dur>=360?'var(--warn)':'var(--danger)'))+'">'+fmtDurCN(dur)+'</div>'+
+      '<div class="sl-sub">'+esc(rec.bed)+' 入睡 → '+esc(rec.wake)+' 起床'+(diff?('<br>距 7 小时目标'+diffTxt+(diff%60?String(diff%60)+' 分钟':'')):'')+'</div></div>'+
+      '<span class="sl-badge '+cls+'">'+badge+'</span>';
+  }else{
+    summary.innerHTML='<div class="sl-moon">🌙</div>'+
+      '<div class="sl-main"><div class="sl-dur" style="font-size:16px;color:var(--text2)">还没记录'+(isToday?'昨晚的睡眠':'这天的睡眠')+'</div>'+
+      '<div class="sl-sub">今晚目标：<b style="color:var(--secondary)">'+goalBed+'</b> 前入睡，即可睡满 7 小时</div></div>';
+  }
+  /* === 图表：近14天 === */
+  const bars=document.getElementById('sleepBars'),dates=document.getElementById('sleepDates');
+  const MAXBAR=540; /* 图表满格 9h */
+  let bh='',dh='';
+  const from=addDays(todayKey,-13);
+  for(let i=0;i<14;i++){
+    const day=addDays(from,i);
+    const r=state.sleepLog?state.sleepLog[day]:null;
+    const dd=r?sleepDur(r.bed,r.wake):null;
+    const isT=day===todayKey;
+    if(dd!==null){
+      const pct=Math.min(Math.max(dd/MAXBAR,0),1)*100;
+      const cls=dd>=SLEEP_GOAL?'good':(dd>=360?'mid':'bad');
+      bh+='<div class="sl-col"><div class="sl-bar '+cls+'" style="height:'+pct.toFixed(1)+'%"><span class="sl-val">'+(isT?'':fmtDurShort(dd))+'</span></div></div>';
+    }else{
+      bh+='<div class="sl-col"><div class="sl-bar none"><span class="sl-val"></span></div></div>';
+    }
+    dh+='<span class="'+(isT?'today':(dd!==null?'full':''))+'">'+parseDate(day).getDate()+'</span>';
+  }
+  bars.innerHTML=bh;
+  dates.innerHTML=dh;
+  /* 目标线：若不存在则插入 */
+  const chart=document.querySelector('.sleep-chart');
+  let goalEl=document.querySelector('.sl-goal');
+  if(!goalEl){goalEl=document.createElement('div');goalEl.className='sl-goal';chart.insertBefore(goalEl,chart.firstChild);}
+  goalEl.style.bottom=(SLEEP_GOAL/MAXBAR*100).toFixed(1)+'%';goalEl.innerHTML='<span>7h</span>';
+  /* === 统计 === */
+  const avg7=sleepAvg(todayKey,7);
+  const avgPrev7=sleepAvg(addDays(todayKey,-7),7);
+  const st=sleepStreakInfo();
+  const delta=(avg7!==null&&avgPrev7!==null)?(avg7-avgPrev7):null;
+  document.getElementById('sleepStats').innerHTML=
+    '<div class="sl-stat" title="近 7 天有记录的夜晚平均睡眠时长"><div class="sl-num">'+(avg7!==null?fmtDurShort(avg7):'—')+'</div><div class="sl-label">近7天平均</div></div>'+
+    '<div class="sl-stat" title="'+(st.fromYesterday?'今天未记录，从昨天起连续睡满 7 小时的天数':'连续睡满 7 小时的天数')+'"><div class="sl-num" style="color:'+(st.days>0?'var(--secondary)':'var(--text2)')+'">'+st.days+'<span style="font-size:11px;font-weight:400"> 天</span></div><div class="sl-label">连续达标</div></div>'+
+    '<div class="sl-stat" title="近 7 天较上一周的平均变化"><div class="sl-num '+(delta===null?'':(delta>=0?'up':'down'))+'">'+(delta===null?'—':((delta>=0?'+':'−')+fmtDurShort(Math.abs(delta))))+'</div><div class="sl-label">较上一周</div></div>';
+  res.classList.remove('show');
+}
+function saveSleep(){
+  const cur=sleepCur();
+  const bed=document.getElementById('sleepBed').value;
+  const wake=document.getElementById('sleepWake').value;
+  if(!bed||!wake){toast('请选择入睡和起床时间');return;}
+  const dur=sleepDur(bed,wake);
+  if(dur===null||dur<=0){toast('时间格式有误');return;}
+  if(!state.sleepLog)state.sleepLog={};
+  state.sleepLog[cur]={bed:bed,wake:wake};
+  saveData(true);renderSleep();
+  const res=document.getElementById('sleepResult');
+  const goalBed=sleepGoalBed(wake);
+  if(dur>=SLEEP_GOAL){
+    res.textContent='已保存 · 睡眠 '+fmtDurCN(dur)+'，超出目标 '+fmtDurShort(dur-SLEEP_GOAL)+'，保持住！🎉';
+    res.style.color='var(--secondary)';
+  }else{
+    res.textContent='已保存 · 睡眠 '+fmtDurCN(dur)+'，今晚 '+goalBed+' 前入睡就能补齐目标，加油 🌙';
+    res.style.color='var(--text2)';
+  }
+  res.classList.add('show');
+  toast(dur>=SLEEP_GOAL?'已保存，睡满 7 小时！':'已保存睡眠记录');
+}
+function clearSleep(){
+  const cur=sleepCur();
+  if(!state.sleepLog||!state.sleepLog[cur]){toast('这天没有记录');return;}
+  if(!confirm('确定删除 '+cur+' 的睡眠记录吗？'))return;
+  delete state.sleepLog[cur];
+  saveData(true);renderSleep();toast('已删除');
+}
+
 /* ================== 静心 ================== */
 function openMind(){
   const today=todayKey;
@@ -1136,6 +1366,11 @@ function bindEvents(){
   document.getElementById('sutraReset').onclick=resetSutra;
   document.getElementById('sutraPrev').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,-1);renderSutra();};
   document.getElementById('sutraNext').onclick=()=>{sutraCursor=addDays(sutraCursor||todayKey,1);if(sutraCursor>todayKey)sutraCursor=todayKey;renderSutra();};
+  /* 睡眠记录 */
+  document.getElementById('sleepSave').onclick=saveSleep;
+  document.getElementById('sleepClear').onclick=clearSleep;
+  document.getElementById('sleepPrev').onclick=()=>{sleepCursor=addDays(sleepCursor||todayKey,-1);renderSleep();};
+  document.getElementById('sleepNext').onclick=()=>{sleepCursor=addDays(sleepCursor||todayKey,1);if(sleepCursor>todayKey)sleepCursor=todayKey;renderSleep();};
   document.getElementById('mindBtn').onclick=openMind;
   document.getElementById('mind-mask').addEventListener('click',closeMind);
   document.getElementById('rawClose').onclick=()=>document.getElementById('rawModal').classList.remove('on');
@@ -1147,10 +1382,10 @@ function bindEvents(){
   document.getElementById('syncClose').onclick=closeSyncModal;
   document.getElementById('syncModal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeSyncModal();});
   document.getElementById('syncBox').onclick=null;
-  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;habitCursor=null;renderAll();}},30000);
+  setInterval(()=>{const t=todayStr();if(t!==todayKey){todayKey=t;journalCursor=null;sutraCursor=null;habitCursor=null;sleepCursor=null;renderAll();}},30000);
 }
 function renderAll(){
-  renderHabits();renderJournal();renderSutra();renderWeek();
+  renderHabits();renderJournal();renderSutra();renderSleep();renderWeek();
   const now=new Date();
   document.getElementById('todayStr').textContent=now.getFullYear()+'年'+(now.getMonth()+1)+'月'+now.getDate()+'日 · 星期'+weekdayCN[now.getDay()];
   const today=state.calmLog[todayKey]||0;let total=0;Object.keys(state.calmLog).forEach(k=>total+=state.calmLog[k]);
